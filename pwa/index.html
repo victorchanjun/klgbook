@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0a1628">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Booker">
+  <title>Kallang Booker</title>
+  <link rel="manifest" href="manifest.json">
+  <style>
+    :root {
+      --bg:       #0a1628;
+      --surface:  #111f38;
+      --border:   #1e3255;
+      --green:    #1D9E75;
+      --green-dk: #0F6E56;
+      --green-lt: #9FE1CB;
+      --green-bg: #0b2a20;
+      --amber:    #f59e0b;
+      --amber-bg: #2a1f06;
+      --red:      #ef4444;
+      --red-bg:   #2a0a0a;
+      --text:     #e2e8f0;
+      --muted:    #64748b;
+      --mono:     'JetBrains Mono', 'Fira Mono', monospace;
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bot: env(safe-area-inset-bottom, 0px);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+      padding: calc(var(--safe-top) + 16px) 16px calc(var(--safe-bot) + 24px);
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    /* ── Header ── */
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 24px;
+      padding-top: 4px;
+    }
+    .header-icon { font-size: 28px; line-height: 1; }
+    .header-title { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
+    .header-sub { font-size: 12px; color: var(--muted); margin-top: 1px; }
+
+    /* ── Tabs ── */
+    .tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 4px;
+      margin-bottom: 20px;
+    }
+    .tab {
+      padding: 9px;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 600;
+      border-radius: 7px;
+      cursor: pointer;
+      color: var(--muted);
+      transition: all 0.15s;
+      border: none;
+      background: none;
+    }
+    .tab.active { background: var(--green); color: white; }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+    .card-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    /* ── Fields ── */
+    .field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
+    .field:last-child { margin-bottom: 0; }
+    .field label { font-size: 12px; color: var(--muted); font-weight: 500; }
+    .field input,
+    .field select,
+    .field textarea {
+      width: 100%;
+      padding: 11px 12px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 14px;
+      font-family: inherit;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    .field input:focus,
+    .field select:focus,
+    .field textarea:focus {
+      outline: none;
+      border-color: var(--green);
+    }
+    .field textarea {
+      font-family: var(--mono);
+      font-size: 11px;
+      min-height: 72px;
+      resize: none;
+      line-height: 1.5;
+    }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+    /* ── Opens info ── */
+    .opens-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 7px 10px;
+      font-size: 12px;
+      font-family: var(--mono);
+      color: var(--green-lt);
+      margin-top: 10px;
+      width: 100%;
+    }
+    .opens-pill .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+      flex-shrink: 0;
+    }
+
+    /* ── Primary button ── */
+    .btn-primary {
+      width: 100%;
+      padding: 15px;
+      background: var(--green);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 0.01em;
+      margin-top: 4px;
+      transition: background 0.15s, transform 0.1s;
+      -webkit-appearance: none;
+    }
+    .btn-primary:active { background: var(--green-dk); transform: scale(0.98); }
+    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+    /* ── Status panel ── */
+    #status-panel { display: none; }
+    #status-panel.show { display: block; }
+
+    .status-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .badge-armed   { background: var(--amber-bg); color: var(--amber); }
+    .badge-running { background: var(--green-bg); color: var(--green-lt); }
+    .badge-booked  { background: var(--green-bg); color: var(--green-lt); }
+    .badge-failed  { background: var(--red-bg); color: var(--red); }
+
+    .badge-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .badge-armed   .badge-dot { background: var(--amber); animation: pulse 1.4s infinite; }
+    .badge-running .badge-dot { background: var(--green-lt); animation: pulse 0.7s infinite; }
+    .badge-booked  .badge-dot { background: var(--green-lt); }
+    .badge-failed  .badge-dot { background: var(--red); }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    /* ── Countdown ── */
+    .countdown-block {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      text-align: center;
+      margin-bottom: 12px;
+    }
+    .countdown-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .countdown-time {
+      font-family: var(--mono);
+      font-size: 36px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: 2px;
+      line-height: 1;
+    }
+    .countdown-time.imminent { color: var(--amber); }
+    .countdown-date { font-size: 12px; color: var(--muted); margin-top: 6px; font-family: var(--mono); }
+
+    /* ── Log ── */
+    .log-wrap {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .log-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .log-title { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+    .log-clear { font-size: 11px; color: var(--muted); background: none; border: none; cursor: pointer; padding: 2px 6px; }
+    #log {
+      padding: 10px 12px;
+      font-family: var(--mono);
+      font-size: 11px;
+      line-height: 1.7;
+      max-height: 220px;
+      overflow-y: auto;
+      color: #94a3b8;
+    }
+    #log .line-ok     { color: var(--green-lt); }
+    #log .line-err    { color: var(--red); }
+    #log .line-warn   { color: var(--amber); }
+    #log .line-fire   { color: #c084fc; }
+    #log .line-booked { color: var(--green-lt); font-weight: 700; font-size: 13px; }
+
+    /* ── Booked banner ── */
+    .booked-banner {
+      display: none;
+      background: var(--green-bg);
+      border: 1px solid var(--green);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      margin-bottom: 12px;
+    }
+    .booked-banner.show { display: block; }
+    .booked-banner .big { font-size: 40px; margin-bottom: 8px; }
+    .booked-banner .title { font-size: 18px; font-weight: 700; color: var(--green-lt); margin-bottom: 4px; }
+    .booked-banner .sub { font-size: 13px; color: var(--muted); }
+    .btn-payment {
+      display: block;
+      width: 100%;
+      margin-top: 14px;
+      padding: 13px;
+      background: var(--green);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      text-align: center;
+    }
+
+    /* ── Abort button ── */
+    .btn-abort {
+      width: 100%;
+      padding: 12px;
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      border-radius: 10px;
+      font-size: 13px;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+    .btn-abort:active { border-color: var(--red); color: var(--red); }
+
+    /* ── Pane visibility ── */
+    #pane-setup { }
+    #pane-run   { display: none; }
+    #pane-run.show { display: block; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="header-icon">🏸</div>
+    <div>
+      <div class="header-title">Kallang Booker</div>
+      <div class="header-sub">Auto-book badminton courts</div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" id="tab-setup" onclick="showTab('setup')">Setup</button>
+    <button class="tab" id="tab-run" onclick="showTab('run')">Status</button>
+  </div>
+
+  <!-- ── SETUP PANE ── -->
+  <div id="pane-setup">
+
+    <div class="card">
+      <div class="card-label">Target Slot</div>
+      <div class="grid2">
+        <div class="field">
+          <label>Date</label>
+          <input type="date" id="date" oninput="updateOpens()">
+        </div>
+        <div class="field">
+          <label>Time</label>
+          <input type="time" id="time" value="07:00" oninput="updateOpens()">
+        </div>
+      </div>
+      <div class="opens-pill" id="opens-info">
+        <span class="dot"></span>
+        <span>Select date and time</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Account</div>
+      <div class="grid2">
+        <div class="field">
+          <label>User ID</label>
+          <input type="number" id="userId" value="62061" inputmode="numeric">
+        </div>
+        <div class="field">
+          <label>Rule ID</label>
+          <input type="number" id="ruleId" value="19" inputmode="numeric">
+        </div>
+      </div>
+      <div class="field">
+        <label>Duration (min)</label>
+        <select id="duration">
+          <option value="60">60 minutes</option>
+          <option value="90">90 minutes</option>
+          <option value="120">120 minutes</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Bearer Token</div>
+      <div class="field">
+        <label>JWT — no "Bearer " prefix</label>
+        <textarea id="token" placeholder="eyJhbGci..." autocomplete="off" autocorrect="off" spellcheck="false"></textarea>
+      </div>
+    </div>
+
+    <button class="btn-primary" id="arm-btn" onclick="arm()">Arm Booker</button>
+
+  </div>
+
+  <!-- ── STATUS PANE ── -->
+  <div id="pane-run">
+
+    <div id="booked-banner" class="booked-banner">
+      <div class="big">🎉</div>
+      <div class="title">Court booked!</div>
+      <div class="sub" id="booked-court"></div>
+      <a id="payment-btn" class="btn-payment" href="#" target="_blank">Complete payment →</a>
+    </div>
+
+    <div class="card" id="status-card">
+      <div class="status-header">
+        <div class="status-badge badge-armed" id="status-badge">
+          <span class="badge-dot"></span>
+          <span id="status-text">Armed</span>
+        </div>
+        <div style="font-size:12px; color:var(--muted)" id="slot-label"></div>
+      </div>
+
+      <div class="countdown-block" id="countdown-block">
+        <div class="countdown-label">Window opens in</div>
+        <div class="countdown-time" id="countdown">--:--:--</div>
+        <div class="countdown-date" id="countdown-date"></div>
+      </div>
+
+      <div class="log-wrap">
+        <div class="log-header">
+          <span class="log-title">Log</span>
+          <button class="log-clear" onclick="clearLog()">Clear</button>
+        </div>
+        <div id="log"></div>
+      </div>
+
+      <button class="btn-abort" onclick="abort()">Stop & reset</button>
+    </div>
+
+  </div>
+
+  <script>
+    // ── State ──
+    let countdownTimer = null;
+    let aborted = false;
+    let booked = false;
+    let paymentUrl = null;
+
+    const BASE      = 'https://thekallang.perfectgym.com/clientportal2';
+    const CLUB_ID   = 1;
+    const ZONE_TYPE = 31;
+    const RETRY_DURATION_MS  = 5 * 60 * 1000;
+    const RETRY_INTERVAL_MS  = 300;
+    const PARALLEL_SHOTS     = 5;
+    const PREFIRE_MS         = 3000;
+    const SETTLE_MS          = 400;
+
+    let TOKEN, USER_ID, RULE_ID, DURATION, START_TIME, SLOT_DATE, OPEN_AT_MS;
+    let SESSION_ID = null;
+    let RESOLVED_ZONE_ID = null;
+    let AVAILABLE_ZONES = [];
+
+    // ── Tabs ──
+    function showTab(tab) {
+      document.getElementById('pane-setup').style.display = tab === 'setup' ? '' : 'none';
+      document.getElementById('pane-run').style.display   = tab === 'run'   ? '' : 'none';
+      document.getElementById('tab-setup').classList.toggle('active', tab === 'setup');
+      document.getElementById('tab-run').classList.toggle('active',   tab === 'run');
+    }
+
+    // ── Opens info ──
+    function updateOpens() {
+      const date = document.getElementById('date').value;
+      const time = document.getElementById('time').value;
+      const el = document.getElementById('opens-info').querySelector('span:last-child');
+      if (!date || !time) { el.textContent = 'Select date and time'; return; }
+      const openMs = new Date(date + 'T' + time + ':00').getTime() - 168 * 3600000;
+      el.textContent = 'Opens: ' + new Date(openMs).toLocaleString('en-SG', {
+        weekday: 'short', month: 'short', day: 'numeric',
+        hour: '2-digit', minute: '2-digit', second: '2-digit'
+      });
+    }
+
+    // ── Logging ──
+    function log(msg, type = '') {
+      const el = document.getElementById('log');
+      const line = document.createElement('div');
+      line.className = type ? 'line-' + type : '';
+      line.textContent = new Date().toLocaleTimeString('en-SG') + '  ' + msg;
+      el.appendChild(line);
+      el.scrollTop = el.scrollHeight;
+    }
+    function clearLog() { document.getElementById('log').innerHTML = ''; }
+
+    // ── Status badge ──
+    function setStatus(state, text) {
+      const badge = document.getElementById('status-badge');
+      badge.className = 'status-badge badge-' + state;
+      badge.innerHTML = '<span class="badge-dot"></span><span>' + text + '</span>';
+    }
+
+    // ── Countdown ──
+    function pad(n) { return String(Math.floor(n)).padStart(2, '0'); }
+
+    function tickCountdown() {
+      if (aborted) return;
+      const ms = OPEN_AT_MS - Date.now();
+      const cdEl = document.getElementById('countdown');
+
+      if (ms <= PREFIRE_MS) {
+        cdEl.textContent = '00:00:00';
+        cdEl.classList.add('imminent');
+        fireStep3UntilBooked();
+        return;
+      }
+
+      const h = Math.floor(ms / 3600000);
+      const m = Math.floor((ms % 3600000) / 60000);
+      const s = Math.floor((ms % 60000) / 1000);
+      cdEl.textContent = pad(h) + ':' + pad(m) + ':' + pad(s);
+      cdEl.classList.toggle('imminent', ms < 30000);
+
+      const delay = ms > 300000 ? 1000 : ms > 10000 ? 500 : 100;
+      countdownTimer = setTimeout(tickCountdown, delay);
+    }
+
+    // ── API headers ──
+    function headers() {
+      return {
+        'Content-Type': 'application/json;charset=utf-8',
+        'Accept': 'application/json, text/plain, */*',
+        'Authorization': 'Bearer ' + TOKEN,
+        'X-Hash': '#/FacilityBooking?clubId=' + CLUB_ID + '&zoneTypeId=' + ZONE_TYPE + '&date=' + SLOT_DATE,
+        'BAF-WIZARD-CURRENTURL': BASE + '/#/FacilityBooking?clubId=' + CLUB_ID + '&zoneTypeId=' + ZONE_TYPE + '&date=' + SLOT_DATE + '&sessionId=' + SESSION_ID,
+        'CP-BUY-PRODUCT-BEFORE-BOOKING-FB-SESSION-ID': SESSION_ID,
+        'X-Requested-With': 'XMLHttpRequest',
+        'CP-LANG': 'en',
+        'CP-MODE': 'desktop'
+      };
+    }
+
+    function getOpenDate() {
+      const d = new Date(OPEN_AT_MS);
+      return d.getFullYear() + '-' +
+        String(d.getMonth() + 1).padStart(2, '0') + '-' +
+        String(d.getDate()).padStart(2, '0');
+    }
+
+    // ── Step 1 ──
+    async function step1() {
+      const url = BASE + '/FacilityBookings/BuyProductBeforeBookingFacility/Start?clubId=' + CLUB_ID +
+        '&zoneTypeId=' + ZONE_TYPE + '&date=' + getOpenDate() + '&startDate=' + START_TIME;
+      const res = await fetch(url, {
+        credentials: 'include',
+        headers: { 'Accept': 'application/json, text/plain, */*', 'Authorization': 'Bearer ' + TOKEN,
+          'X-Requested-With': 'XMLHttpRequest', 'CP-LANG': 'en', 'CP-MODE': 'desktop' }
+      });
+      if (!res.ok) throw new Error('Step 1: ' + res.status);
+      SESSION_ID = res.headers.get('cp-buy-product-before-booking-fb-session-id');
+      if (!SESSION_ID) throw new Error('No sessionId in response');
+      const data = await res.json();
+      AVAILABLE_ZONES = (data.Data && data.Data.Zones) ? data.Data.Zones : [];
+      if (!AVAILABLE_ZONES.length) throw new Error('No available zones');
+      AVAILABLE_ZONES.sort((a, b) => {
+        const na = parseInt(a.Name.match(/\d+$/) || [0]) || 0;
+        const nb = parseInt(b.Name.match(/\d+$/) || [0]) || 0;
+        return nb - na;
+      });
+      RESOLVED_ZONE_ID = AVAILABLE_ZONES[0].Id;
+      log('Session: ' + SESSION_ID.slice(0, 8) + '...', 'ok');
+      log('Courts: ' + AVAILABLE_ZONES.map(z => z.Name).join(', '), 'ok');
+      log('Using: ' + AVAILABLE_ZONES[0].Name + ' (id:' + RESOLVED_ZONE_ID + ')', 'ok');
+    }
+
+    // ── Step 2 ──
+    async function step2() {
+      const res = await fetch(BASE + '/FacilityBookings/WizardSteps/SetFacilityBookingDetailsWizardStep/Next', {
+        method: 'POST', credentials: 'include', headers: headers(),
+        body: JSON.stringify({ UserId: USER_ID, ZoneId: RESOLVED_ZONE_ID, StartTime: START_TIME,
+          RequiredNumberOfSlots: null, Duration: DURATION })
+      });
+      if (!res.ok) throw new Error('Step 2: ' + res.status);
+      log('Details set (zone ' + RESOLVED_ZONE_ID + ')', 'ok');
+    }
+
+    // ── Step 3 (single attempt) ──
+    async function tryStep3() {
+      const res = await fetch(BASE + '/FacilityBookings/WizardSteps/ChooseBookingRuleStep/Next', {
+        method: 'POST', credentials: 'include', headers: headers(),
+        body: JSON.stringify({ ruleId: RULE_ID, OtherCalendarEventBookedAtRequestedTime: false,
+          HasUserRequiredProducts: false })
+      });
+      if (!res.ok) return false;
+      const data = await res.json();
+      booked = true;
+      paymentUrl = data.Redirect || null;
+      return true;
+    }
+
+    // ── Salvo: PARALLEL_SHOTS concurrent step3 attempts ──
+    async function salvo(n) {
+      const shots = Array.from({ length: PARALLEL_SHOTS }, (_, i) =>
+        tryStep3().catch(() => false)
+      );
+      return (await Promise.all(shots)).some(Boolean);
+    }
+
+    // ── Prewarm (on arm) ──
+    async function prewarm() {
+      log('Pre-warming session...', 'warn');
+      for (let i = 1; i <= 5; i++) {
+        try {
+          log('Step 1 (attempt ' + i + ')...');
+          await step1();
+          log('Step 2...');
+          await step2();
+          log('Session ready. Armed.', 'ok');
+          return true;
+        } catch (err) {
+          log('Pre-warm failed: ' + err.message, 'err');
+          if (i < 5) {
+            log('Retrying in 3s...', 'warn');
+            await sleep(3000);
+            SESSION_ID = null;
+          }
+        }
+      }
+      return false;
+    }
+
+    // ── Fire step 3 blitz ──
+    async function fireStep3UntilBooked() {
+      if (aborted) return;
+      setStatus('running', 'Booking...');
+      log('Refreshing session before blitz...', 'warn');
+      try {
+        SESSION_ID = null;
+        await step1();
+        await step2();
+        await sleep(SETTLE_MS);
+        log('Session fresh. Blitzing!', 'fire');
+      } catch (err) {
+        log('Session refresh failed: ' + err.message, 'err');
+        setStatus('failed', 'Failed');
+        return;
+      }
+
+      const deadline = Date.now() + RETRY_DURATION_MS;
+      let attempt = 1;
+      while (!booked && !aborted && Date.now() < deadline) {
+        log('Salvo #' + attempt + ' — ' + Math.round((deadline - Date.now()) / 1000) + 's left', 'fire');
+        const ok = await salvo(attempt);
+        if (ok || booked) break;
+        attempt += PARALLEL_SHOTS;
+        if (!booked && !aborted && Date.now() < deadline) await sleep(RETRY_INTERVAL_MS);
+      }
+
+      if (booked) {
+        onBooked();
+      } else if (!aborted) {
+        log('❌ Failed after 5 minutes', 'err');
+        setStatus('failed', 'Failed');
+      }
+    }
+
+    // ── On success ──
+    function onBooked() {
+      setStatus('booked', 'Booked!');
+      log('✅ BOOKED! Court: ' + (AVAILABLE_ZONES[0] ? AVAILABLE_ZONES[0].Name : ''), 'booked');
+      const banner = document.getElementById('booked-banner');
+      banner.classList.add('show');
+      document.getElementById('booked-court').textContent =
+        (AVAILABLE_ZONES[0] ? AVAILABLE_ZONES[0].Name : '') + ' · ' + SLOT_DATE + ' ' + START_TIME.slice(11, 16);
+      if (paymentUrl) {
+        const btn = document.getElementById('payment-btn');
+        btn.href = paymentUrl;
+        btn.style.display = 'block';
+      } else {
+        document.getElementById('payment-btn').style.display = 'none';
+      }
+      // Vibrate on Android
+      if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 400]);
+      showTab('run');
+    }
+
+    // ── Abort ──
+    function abort() {
+      aborted = true;
+      if (countdownTimer) clearTimeout(countdownTimer);
+      setStatus('armed', 'Stopped');
+      log('Stopped by user.', 'warn');
+      document.getElementById('arm-btn').disabled = false;
+    }
+
+    function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+    // ── Arm ──
+    async function arm() {
+      const date     = document.getElementById('date').value;
+      const time     = document.getElementById('time').value;
+      const userId   = document.getElementById('userId').value;
+      const ruleId   = document.getElementById('ruleId').value;
+      const duration = document.getElementById('duration').value;
+      const token    = document.getElementById('token').value.trim();
+
+      if (!date || !time || !token) { alert('Fill in date, time, and token'); return; }
+
+      // Save to localStorage
+      ['date','time','userId','ruleId','duration','token'].forEach(id => {
+        localStorage.setItem('kb_' + id, document.getElementById(id).value);
+      });
+
+      START_TIME  = date + 'T' + time + ':00';
+      SLOT_DATE   = date;
+      OPEN_AT_MS  = new Date(START_TIME).getTime() - 168 * 3600000;
+      TOKEN       = token;
+      USER_ID     = parseInt(userId);
+      RULE_ID     = parseInt(ruleId);
+      DURATION    = parseInt(duration);
+      SESSION_ID  = null;
+      aborted     = false;
+      booked      = false;
+      paymentUrl  = null;
+
+      document.getElementById('arm-btn').disabled = true;
+      document.getElementById('booked-banner').classList.remove('show');
+      document.getElementById('slot-label').textContent = date + ' ' + time;
+      document.getElementById('countdown-date').textContent =
+        'Opens: ' + new Date(OPEN_AT_MS).toLocaleString('en-SG', {
+          month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit'
+        });
+      clearLog();
+      setStatus('armed', 'Armed');
+      showTab('run');
+
+      const ok = await prewarm();
+      if (!ok) {
+        log('Setup failed. Check token.', 'err');
+        setStatus('failed', 'Setup failed');
+        document.getElementById('arm-btn').disabled = false;
+        return;
+      }
+
+      const msLeft = OPEN_AT_MS - Date.now();
+      if (msLeft <= PREFIRE_MS) {
+        log('Window already open — booking now', 'warn');
+        await fireStep3UntilBooked();
+      } else {
+        const h = Math.floor(msLeft / 3600000);
+        const m = Math.floor((msLeft % 3600000) / 60000);
+        log('Armed. Opens in ' + h + 'h ' + m + 'm. Keep app open.', 'ok');
+        tickCountdown();
+      }
+    }
+
+    // ── Restore saved values ──
+    window.addEventListener('DOMContentLoaded', () => {
+      ['date','time','userId','ruleId','duration','token'].forEach(id => {
+        const v = localStorage.getItem('kb_' + id);
+        if (v) document.getElementById(id).value = v;
+      });
+      updateOpens();
+    });
+
+    // ── Service worker ──
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    }
+  </script>
+</body>
+</html>
