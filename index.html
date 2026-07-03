@@ -270,7 +270,9 @@
   const ZONE_TYPE         = 31;
   const RETRY_DURATION_MS = 180 * 1000;
   const PARALLEL_SHOTS    = 3;
-  const PREFIRE_MS        = 1200;
+  const PREFIRE_MS        = 3000;
+  const PREFIRE_REBUILD_MS = 3000;
+  let measuredLatency = 0; // ms, measured dynamically
   const WAVE_INTERVAL_MS  = 50;
   const KEEPALIVE_MS      = 5000;
   const SESSIONS_PER_COURT = 5;
@@ -353,10 +355,6 @@
   async function fireBlitz(){
     if(keepaliveTimer){clearInterval(keepaliveTimer);keepaliveTimer=null;}
     console.log("\\n🔥🔥🔥 FIRING BLITZ 🔥🔥🔥");
-    // Critical: rebuild fresh sessions right at T=0 for competitive slots
-    console.log("🔄 Building fresh sessions for launch...");
-    availableZones = null;
-    try { await refreshPool(); } catch(e) { console.warn("Session rebuild failed"); }
     console.log(" "+sessionPool.length+" sessions × "+PARALLEL_SHOTS+" = "+(sessionPool.length*PARALLEL_SHOTS)+" per wave | "+WAVE_INTERVAL_MS+"ms interval | "+(RETRY_DURATION_MS/1000)+"s max");
     const deadline=Date.now()+RETRY_DURATION_MS;
     const frt=setInterval(async()=>{if(booked){clearInterval(frt);return;}try{availableZones=null;await refreshPool();}catch(e){}},KEEPALIVE_MS);
@@ -369,10 +367,50 @@
 
   async function prewarm(){console.log("🔌 Pre-warming...");await Promise.all(Array.from({length:12},()=>fetch(BASE+"/FacilityBookings/BuyProductBeforeBookingFacility/Start?clubId="+CLUB_ID+"&zoneTypeId="+ZONE_TYPE+"&date="+getOpenDate()+"&startDate="+START_TIME,{credentials:"include",headers:authHeaders()})).map(f=>f.catch(()=>{})));console.log("   Warmed");}
 
-  function countdown(){const ms=(OPEN_AT_MS+serverClockOffset)-Date.now();if(ms<=PREFIRE_MS){console.log("\\n🎯 Window opening!");fireBlitz();return;}const h=Math.floor(ms/3600000),m=Math.floor((ms%3600000)/60000),s=Math.floor((ms%60000)/1000);const msg="⏱ "+pad(h)+"h "+pad(m)+"m "+pad(s)+"s"+(clockSynced?" 🕐":"");if(ms<60000)console.log(msg);else if(ms<300000)console.info(msg);setTimeout(countdown,ms>300000?30000:ms>60000?10000:ms>10000?1000:100);}
+  let preRebuilt = false;
+  async function measureLatency() {
+    // Measure real network latency to the server
+    const start = performance.now();
+    try {
+      await fetch(BASE + "/FacilityBookings/BuyProductBeforeBookingFacility/Start?clubId=" + CLUB_ID + "&zoneTypeId=" + ZONE_TYPE + "&date=" + getOpenDate() + "&startDate=" + START_TIME, {
+        credentials: "include",
+        headers: authHeaders(),
+        mode: "cors"
+      });
+    } catch(e) {}
+    const latency = performance.now() - start;
+    // Take 3 measurements for stability
+    let total = 0;
+    for (let i = 0; i < 2; i++) {
+      const s = performance.now();
+      try { await fetch(BASE + "/FacilityBookings/BuyProductBeforeBookingFacility/Start?clubId=" + CLUB_ID + "&zoneTypeId=" + ZONE_TYPE + "&date=" + getOpenDate() + "&startDate=" + START_TIME, {credentials:"include",headers:authHeaders(),mode:"cors"}); } catch(e) {}
+      total += performance.now() - s;
+    }
+    measuredLatency = (latency + total / 2);
+    console.log("📡 Measured latency: " + Math.round(measuredLatency) + "ms");
+    return measuredLatency;
+  }
+  function countdown(){
+    const ms=(OPEN_AT_MS+serverClockOffset)-Date.now();
+    // Dynamic timing: rebuild sessions at (3x measured latency) before T=0
+    // This ensures sessions are fresh but ready exactly when window opens
+    const rebuildWindow = Math.max(measuredLatency * 3, 1500); // at least 1.5s
+    if(ms<=rebuildWindow && !preRebuilt){
+      preRebuilt = true;
+      console.log("\n🔄 Pre-rebuilding fresh sessions (window: " + Math.round(rebuildWindow) + "ms, latency: " + Math.round(measuredLatency) + "ms)...");
+      (async()=>{ try{ availableZones=null; await refreshPool(); }catch(e){} })();
+    }
+    if(ms<=0){console.log("\n🎯 Window open!");fireBlitz();return;}
+    const h=Math.floor(ms/3600000),m=Math.floor((ms%3600000)/60000),s=Math.floor((ms%60000)/1000);
+    const msg="⏱ "+pad(h)+"h "+pad(m)+"m "+pad(s)+"s"+(clockSynced?" 🕐":"");
+    if(ms<60000)console.log(msg);else if(ms<300000)console.info(msg);
+    setTimeout(countdown,ms>300000?30000:ms>60000?10000:ms>10000?1000:100);
+  }
 
   console.log("═══════════════════════════════════════");console.log("🏸 KALLANG BOOKER v3 — COMPETITIVE MODE");console.log("═══════════════════════════════════════");console.log("📅 "+SLOT_DATE+" "+START_TIME.slice(11,16)+" | 👤 "+USER_ID+" | Rule "+RULE_ID+" | "+DURATION+"min");
   console.log("\\n🕐 Syncing clock...");await syncServerClock();
+  console.log("\\n📡 Measuring server latency...");
+  await measureLatency();
   await prewarm();
   console.log("\\n⚙️ Building pool ("+SESSIONS_PER_COURT+" per court)...");
   let ok=false;for(let i=1;i<=5;i++){await refreshPool();if(sessionPool.length){ok=true;break;}console.warn("Attempt "+i+" failed, retry in 3s...");await new Promise(r=>setTimeout(r,3000));}
