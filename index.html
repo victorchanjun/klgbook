@@ -392,15 +392,16 @@
   }
   function countdown(){
     const ms=(OPEN_AT_MS+serverClockOffset)-Date.now();
-    // Dynamic timing: rebuild sessions at (3x measured latency) before T=0
-    // This ensures sessions are fresh but ready exactly when window opens
-    const rebuildWindow = Math.max(measuredLatency * 3, 1500); // at least 1.5s
-    if(ms<=rebuildWindow && !preRebuilt){
+    // Fire early: start fireBlitz at (3×latency) before T=0
+    // so the first wave arrives at the server right around T=0
+    const fireWindow = Math.max(measuredLatency * 3, 1500);
+    // Rebuild sessions slightly earlier so they're ready before we fire
+    if(ms<=(fireWindow+1000) && !preRebuilt){
       preRebuilt = true;
-      console.log("\n🔄 Pre-rebuilding fresh sessions (window: " + Math.round(rebuildWindow) + "ms, latency: " + Math.round(measuredLatency) + "ms)...");
+      console.log("\n🔄 Pre-rebuilding fresh sessions...");
       (async()=>{ try{ availableZones=null; await refreshPool(); }catch(e){} })();
     }
-    if(ms<=0){console.log("\n🎯 Window open!");fireBlitz();return;}
+    if(ms<=fireWindow){console.log("\n🎯 Firing early (window: "+Math.round(fireWindow)+"ms)!" );fireBlitz();return;}
     const h=Math.floor(ms/3600000),m=Math.floor((ms%3600000)/60000),s=Math.floor((ms%60000)/1000);
     const msg="⏱ "+pad(h)+"h "+pad(m)+"m "+pad(s)+"s"+(clockSynced?" 🕐":"");
     if(ms<60000)console.log(msg);else if(ms<300000)console.info(msg);
