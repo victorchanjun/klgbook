@@ -268,13 +268,13 @@
   const BASE              = "https://thekallang.perfectgym.com/clientportal2";
   const CLUB_ID           = 1;
   const ZONE_TYPE         = 31;
-  const RETRY_DURATION_MS = 120 * 1000;
-  const PARALLEL_SHOTS    = 16;
-  const PREFIRE_MS        = 800;
-  const WAVE_INTERVAL_MS  = 200;
-  const KEEPALIVE_MS      = 8000;
-  const SESSIONS_PER_COURT = 2;
-  const SERVER_CLOCK_RETRIES = 5;
+  const RETRY_DURATION_MS = 180 * 1000;
+  const PARALLEL_SHOTS    = 3;
+  const PREFIRE_MS        = 1200;
+  const WAVE_INTERVAL_MS  = 50;
+  const KEEPALIVE_MS      = 5000;
+  const SESSIONS_PER_COURT = 5;
+  const SERVER_CLOCK_RETRIES = 8;
   let sessionPool = [], booked = false, keepaliveTimer = null;
   let serverClockOffset = 0, clockSynced = false;
   let waveCount = 0, totalSent = 0, totalOk = 0, totalFail = 0;
@@ -348,16 +348,16 @@
     } catch(_){totalFail++;return false;}
   }
 
-  // Fire one wave: try each session once (no redundant parallel shots per session)
-  function poolSalvo(){
-    if(booked) return Promise.resolve(false);
-    const attempts = sessionPool.map(s => tryStep3(s));
-    return Promise.all(attempts).then(r => r.some(Boolean));
-  }
+  function poolSalvo(){if(booked)return Promise.resolve(false);const a=sessionPool.flatMap(s=>Array.from({length:PARALLEL_SHOTS},()=>tryStep3(s)));return Promise.all(a).then(r=>r.some(Boolean));}
 
   async function fireBlitz(){
     if(keepaliveTimer){clearInterval(keepaliveTimer);keepaliveTimer=null;}
-    console.log("\\n🔥🔥🔥 FIRING BLITZ 🔥🔥🔥");console.log(" "+sessionPool.length+" sessions × "+PARALLEL_SHOTS+" = "+(sessionPool.length*PARALLEL_SHOTS)+" per wave | "+WAVE_INTERVAL_MS+"ms interval | "+(RETRY_DURATION_MS/1000)+"s max");
+    console.log("\\n🔥🔥🔥 FIRING BLITZ 🔥🔥🔥");
+    // Critical: rebuild fresh sessions right at T=0 for competitive slots
+    console.log("🔄 Building fresh sessions for launch...");
+    availableZones = null;
+    try { await refreshPool(); } catch(e) { console.warn("Session rebuild failed"); }
+    console.log(" "+sessionPool.length+" sessions × "+PARALLEL_SHOTS+" = "+(sessionPool.length*PARALLEL_SHOTS)+" per wave | "+WAVE_INTERVAL_MS+"ms interval | "+(RETRY_DURATION_MS/1000)+"s max");
     const deadline=Date.now()+RETRY_DURATION_MS;
     const frt=setInterval(async()=>{if(booked){clearInterval(frt);return;}try{availableZones=null;await refreshPool();}catch(e){}},KEEPALIVE_MS);
     function fireWave(){if(booked||Date.now()>deadline){clearInterval(frt);return;}waveCount++;console.log("🔥 Wave #"+waveCount);poolSalvo().catch(()=>{});setTimeout(fireWave,WAVE_INTERVAL_MS);}
@@ -367,11 +367,11 @@
     if (totalFail > totalOk && totalFail > 0) console.warn("⚠️ High failure rate — check network, token, or rate limiting");
   }
 
-  async function prewarm(){console.log("🔌 Pre-warming...");await Promise.all(Array.from({length:6},()=>fetch(BASE+"/FacilityBookings/BuyProductBeforeBookingFacility/Start?clubId="+CLUB_ID+"&zoneTypeId="+ZONE_TYPE+"&date="+getOpenDate()+"&startDate="+START_TIME,{credentials:"include",headers:authHeaders()})).map(f=>f.catch(()=>{})));console.log("   Warmed");}
+  async function prewarm(){console.log("🔌 Pre-warming...");await Promise.all(Array.from({length:12},()=>fetch(BASE+"/FacilityBookings/BuyProductBeforeBookingFacility/Start?clubId="+CLUB_ID+"&zoneTypeId="+ZONE_TYPE+"&date="+getOpenDate()+"&startDate="+START_TIME,{credentials:"include",headers:authHeaders()})).map(f=>f.catch(()=>{})));console.log("   Warmed");}
 
   function countdown(){const ms=(OPEN_AT_MS+serverClockOffset)-Date.now();if(ms<=PREFIRE_MS){console.log("\\n🎯 Window opening!");fireBlitz();return;}const h=Math.floor(ms/3600000),m=Math.floor((ms%3600000)/60000),s=Math.floor((ms%60000)/1000);const msg="⏱ "+pad(h)+"h "+pad(m)+"m "+pad(s)+"s"+(clockSynced?" 🕐":"");if(ms<60000)console.log(msg);else if(ms<300000)console.info(msg);setTimeout(countdown,ms>300000?30000:ms>60000?10000:ms>10000?1000:100);}
 
-  console.log("═══════════════════════════════════════");console.log("🏸 KALLANG BOOKER v2 — MAX AGGRESSIVE");console.log("═══════════════════════════════════════");console.log("📅 "+SLOT_DATE+" "+START_TIME.slice(11,16)+" | 👤 "+USER_ID+" | Rule "+RULE_ID+" | "+DURATION+"min");
+  console.log("═══════════════════════════════════════");console.log("🏸 KALLANG BOOKER v3 — COMPETITIVE MODE");console.log("═══════════════════════════════════════");console.log("📅 "+SLOT_DATE+" "+START_TIME.slice(11,16)+" | 👤 "+USER_ID+" | Rule "+RULE_ID+" | "+DURATION+"min");
   console.log("\\n🕐 Syncing clock...");await syncServerClock();
   await prewarm();
   console.log("\\n⚙️ Building pool ("+SESSIONS_PER_COURT+" per court)...");
