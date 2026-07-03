@@ -269,11 +269,11 @@
   const CLUB_ID           = 1;
   const ZONE_TYPE         = 31;
   const RETRY_DURATION_MS = 120 * 1000;
-  const PARALLEL_SHOTS    = 30;
-  const PREFIRE_MS        = 500;
-  const WAVE_INTERVAL_MS  = 5;
-  const KEEPALIVE_MS      = 10000;
-  const SESSIONS_PER_COURT = 3;
+  const PARALLEL_SHOTS    = 16;
+  const PREFIRE_MS        = 800;
+  const WAVE_INTERVAL_MS  = 200;
+  const KEEPALIVE_MS      = 8000;
+  const SESSIONS_PER_COURT = 2;
   const SERVER_CLOCK_RETRIES = 5;
   let sessionPool = [], booked = false, keepaliveTimer = null;
   let serverClockOffset = 0, clockSynced = false;
@@ -348,7 +348,12 @@
     } catch(_){totalFail++;return false;}
   }
 
-  function poolSalvo(){if(booked)return Promise.resolve(false);const a=sessionPool.flatMap(s=>Array.from({length:PARALLEL_SHOTS},()=>tryStep3(s)));return Promise.all(a).then(r=>r.some(Boolean));}
+  // Fire one wave: try each session once (no redundant parallel shots per session)
+  function poolSalvo(){
+    if(booked) return Promise.resolve(false);
+    const attempts = sessionPool.map(s => tryStep3(s));
+    return Promise.all(attempts).then(r => r.some(Boolean));
+  }
 
   async function fireBlitz(){
     if(keepaliveTimer){clearInterval(keepaliveTimer);keepaliveTimer=null;}
@@ -358,7 +363,8 @@
     function fireWave(){if(booked||Date.now()>deadline){clearInterval(frt);return;}waveCount++;console.log("🔥 Wave #"+waveCount);poolSalvo().catch(()=>{});setTimeout(fireWave,WAVE_INTERVAL_MS);}
     fireWave();
     await new Promise(resolve=>{const c=setInterval(()=>{if(booked||Date.now()>deadline){clearInterval(c);clearInterval(frt);resolve();}},10);});
-    if(!booked)console.error("\\n❌ No court after "+(RETRY_DURATION_MS/1000)+"s. Waves: "+waveCount+", Sent: "+totalSent);
+    if(!booked)console.error("\\n❌ No court after "+(RETRY_DURATION_MS/1000)+"s | Waves: "+waveCount+" | Sent: "+totalSent+" | OK: "+totalOk+" | Fail: "+totalFail);
+    if (totalFail > totalOk && totalFail > 0) console.warn("⚠️ High failure rate — check network, token, or rate limiting");
   }
 
   async function prewarm(){console.log("🔌 Pre-warming...");await Promise.all(Array.from({length:6},()=>fetch(BASE+"/FacilityBookings/BuyProductBeforeBookingFacility/Start?clubId="+CLUB_ID+"&zoneTypeId="+ZONE_TYPE+"&date="+getOpenDate()+"&startDate="+START_TIME,{credentials:"include",headers:authHeaders()})).map(f=>f.catch(()=>{})));console.log("   Warmed");}
