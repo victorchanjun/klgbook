@@ -268,7 +268,7 @@
   const BASE              = "https://thekallang.perfectgym.com/clientportal2";
   const CLUB_ID           = 1;
   const ZONE_TYPE         = 31;
-  const RETRY_DURATION_MS = 180 * 1000;
+  const RETRY_DURATION_MS = 300 * 1000; // 5 mins after T=0
   const PARALLEL_SHOTS    = 3;
   const PREFIRE_MS        = 3000;
   const PREFIRE_REBUILD_MS = 3000;
@@ -356,7 +356,8 @@
     if(keepaliveTimer){clearInterval(keepaliveTimer);keepaliveTimer=null;}
     console.log("\\n🔥🔥🔥 FIRING BLITZ 🔥🔥🔥");
     console.log(" "+sessionPool.length+" sessions × "+PARALLEL_SHOTS+" = "+(sessionPool.length*PARALLEL_SHOTS)+" per wave | "+WAVE_INTERVAL_MS+"ms interval | "+(RETRY_DURATION_MS/1000)+"s max");
-    const deadline=Date.now()+RETRY_DURATION_MS;
+    // Deadline: 5 mins after the actual booking window opens (not from fire time)
+    const deadline = OPEN_AT_MS + serverClockOffset + 300 * 1000;
     const frt=setInterval(async()=>{if(booked){clearInterval(frt);return;}try{availableZones=null;await refreshPool();}catch(e){}},KEEPALIVE_MS);
     function fireWave(){if(booked||Date.now()>deadline){clearInterval(frt);return;}waveCount++;console.log("🔥 Wave #"+waveCount);poolSalvo().catch(()=>{});setTimeout(fireWave,WAVE_INTERVAL_MS);}
     fireWave();
