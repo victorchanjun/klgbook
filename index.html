@@ -179,6 +179,14 @@
     'use strict';
     let generatedScript = '';
 
+    function setDateMin() {
+      const today = new Date();
+      const y = today.getFullYear();
+      const m = String(today.getMonth()+1).padStart(2,'0');
+      const d = String(today.getDate()).padStart(2,'0');
+      document.getElementById('date').min = y + '-' + m + '-' + d;
+    }
+
     function updateOpens() {
       const date = document.getElementById('date').value;
       const time = document.getElementById('time').value;
@@ -209,250 +217,283 @@
       var openMs    = new Date(startTime).getTime() - 168 * 3600000;
 
       generatedScript =
-"(async function() {\n" +
-"  'use strict';\n" +
-"  var OPEN_AT_MS = " + openMs + ";\n" +
-"  var START_TIME = '" + startTime + "';\n" +
-"  var SLOT_DATE = '" + date + "';\n" +
-"  var USER_ID = " + userId + ";\n" +
-"  var RULE_ID = " + ruleId + ";\n" +
-"  var DURATION = " + duration + ";\n" +
-"  var TOKEN = '" + token.replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\n/g,'\\n').replace(/\r/g,'\\r') + "';\n" +
-"  var BASE = 'https://thekallang.perfectgym.com/clientportal2';\n" +
-"  var CLUB_ID = 1;\n" +
-"  var ZONE_TYPE = 31;\n" +
-"  var RETRY_DURATION_MS = 300 * 1000;\n" +
-"  var PARALLEL_SHOTS = 3;\n" +
-"  var PREFIRE_MS = 3000;\n" +
-"  var WAVE_INTERVAL_MS = 20;\n" +
-"  var KEEPALIVE_MS = 5000;\n" +
-"  var SESSIONS_PER_COURT = 5;\n" +
-"  var SERVER_CLOCK_RETRIES = 8;\n" +
-"  var sessionPool = [], booked = false, keepaliveTimer = null;\n" +
-"  var serverClockOffset = 0, clockSynced = false;\n" +
-"  var waveCount = 0, totalSent = 0, totalOk = 0, totalFail = 0;\n" +
-"  var measuredLatency = 0;\n" +
-"\n" +
-"  function pad(n) { return String(Math.floor(n)).padStart(2,'0'); }\n" +
-"\n" +
-"  function getOpenDate() {\n" +
-"    var d = new Date(OPEN_AT_MS + serverClockOffset);\n" +
-"    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');\n" +
-"  }\n" +
-"\n" +
-"  function authHeaders() {\n" +
-"    return {'Accept':'application/json, text/plain, */*','Authorization':'Bearer '+TOKEN,'X-Requested-With':'XMLHttpRequest','CP-LANG':'en','CP-MODE':'desktop'};\n" +
-"  }\n" +
-"\n" +
-"  async function syncServerClock() {\n" +
-"    for (var i = 1; i <= SERVER_CLOCK_RETRIES; i++) {\n" +
-"      try {\n" +
-"        var t0 = Date.now();\n" +
-"        var r = await fetch(BASE+'/FacilityBookings/BuyProductBeforeBookingFacility/Start?clubId='+CLUB_ID+'&zoneTypeId='+ZONE_TYPE+'&date='+getOpenDate()+'&startDate='+START_TIME,{credentials:'include',headers:authHeaders(),mode:'cors'});\n" +
-"        var t1 = Date.now();\n" +
-"        var sd = r.headers.get('date')||r.headers.get('Date');\n" +
-"        if (sd) { serverClockOffset = new Date(sd).getTime()-(t0+(t1-t0)/2); clockSynced=true; console.log('[OK] Clock synced. Offset: '+serverClockOffset+'ms'); return true; }\n" +
-"      } catch(e) { console.warn('Clock sync attempt '+i+' failed'); }\n" +
-"      await new Promise(function(r){setTimeout(r,500)});\n" +
-"    }\n" +
-"    console.warn('[WARN] Could not sync clock'); return false;\n" +
-"  }\n" +
-"\n" +
-"  var availableZones = null;\n" +
-"\n" +
-"  async function fetchZones() {\n" +
-"    var r = await fetch(BASE+'/FacilityBookings/BuyProductBeforeBookingFacility/Start?clubId='+CLUB_ID+'&zoneTypeId='+ZONE_TYPE+'&date='+getOpenDate()+'&startDate='+START_TIME,{credentials:'include',headers:authHeaders()});\n" +
-"    if (!r.ok) return null;\n" +
-"    var d = await r.json();\n" +
-"    var z = (d.Data&&d.Data.Zones)?d.Data.Zones:[];\n" +
-"    if (!z.length) return null;\n" +
-"    z.sort(function(a,b){return (parseInt((b.Name.match(/\\\\d+$/)||['0'])[0])||0)-(parseInt((a.Name.match(/\\\\d+$/)||['0'])[0])||0);});\n" +
-"    return z;\n" +
-"  }\n" +
-"\n" +
-"  async function buildSession(zone) {\n" +
-"    try {\n" +
-"      var r1 = await fetch(BASE+'/FacilityBookings/BuyProductBeforeBookingFacility/Start?clubId='+CLUB_ID+'&zoneTypeId='+ZONE_TYPE+'&date='+getOpenDate()+'&startDate='+START_TIME,{credentials:'include',headers:authHeaders()});\n" +
-"      if (!r1.ok) return null;\n" +
-"      var sid = r1.headers.get('cp-buy-product-before-booking-fb-session-id');\n" +
-"      if (!sid) return null;\n" +
-"      var h = {'Content-Type':'application/json;charset=utf-8','Accept':'application/json, text/plain, */*','Authorization':'Bearer '+TOKEN,'X-Hash':'#/FacilityBooking?clubId='+CLUB_ID+'&zoneTypeId='+ZONE_TYPE+'&date='+SLOT_DATE,'BAF-WIZARD-CURRENTURL':BASE+'/#/FacilityBooking?clubId='+CLUB_ID+'&zoneTypeId='+ZONE_TYPE+'&date='+SLOT_DATE+'&sessionId='+sid,'CP-BUY-PRODUCT-BEFORE-BOOKING-FB-SESSION-ID':sid,'X-Requested-With':'XMLHttpRequest','CP-LANG':'en','CP-MODE':'desktop'};\n" +
-"      var r2 = await fetch(BASE+'/FacilityBookings/WizardSteps/SetFacilityBookingDetailsWizardStep/Next',{method:'POST',credentials:'include',headers:h,body:JSON.stringify({UserId:USER_ID,ZoneId:zone.Id,StartTime:START_TIME,RequiredNumberOfSlots:null,Duration:DURATION})});\n" +
-"      if (!r2.ok) return null;\n" +
-"      return {sessionId:sid,zoneId:zone.Id,zone:zone};\n" +
-"    } catch(_) { return null; }\n" +
-"  }\n" +
-"\n" +
-"  async function refreshPool() {\n" +
-"    if (!availableZones) {\n" +
-"      availableZones = await fetchZones();\n" +
-"      if (!availableZones) { console.log('[ERR] No zones'); return; }\n" +
-"      console.log('[OK] Courts: '+availableZones.map(function(z){return z.Name}).join(', '));\n" +
-"    }\n" +
-"    var builds = [];\n" +
-"    for (var i = 0; i < availableZones.length; i++) {\n" +
-"      for (var j = 0; j < SESSIONS_PER_COURT; j++) {\n" +
-"        builds.push(buildSession(availableZones[i]));\n" +
-"      }\n" +
-"    }\n" +
-"    var res = await Promise.all(builds);\n" +
-"    sessionPool = res.filter(function(x){return x});\n" +
-"    console.log('[OK] Pool: '+sessionPool.length+'/'+(availableZones.length*SESSIONS_PER_COURT)+' sessions');\n" +
-"  }\n" +
-"\n" +
-"  async function tryStep3(sess) {\n" +
-"    if (booked) return false;\n" +
-"    var h = {'Content-Type':'application/json;charset=utf-8','Accept':'application/json, text/plain, */*','Authorization':'Bearer '+TOKEN,'X-Hash':'#/FacilityBooking?clubId='+CLUB_ID+'&zoneTypeId='+ZONE_TYPE+'&date='+SLOT_DATE,'BAF-WIZARD-CURRENTURL':BASE+'/#/FacilityBooking?clubId='+CLUB_ID+'&zoneTypeId='+ZONE_TYPE+'&date='+SLOT_DATE+'&sessionId='+sess.sessionId,'CP-BUY-PRODUCT-BEFORE-BOOKING-FB-SESSION-ID':sess.sessionId,'X-Requested-With':'XMLHttpRequest','CP-LANG':'en','CP-MODE':'desktop'};\n" +
-"    try {\n" +
-"      var res = await fetch(BASE+'/FacilityBookings/WizardSteps/ChooseBookingRuleStep/Next',{method:'POST',credentials:'include',headers:h,body:JSON.stringify({ruleId:RULE_ID,OtherCalendarEventBookedAtRequestedTime:false,HasUserRequiredProducts:false})});\n" +
-"      totalSent++;\n" +
-"      if (!res.ok) { totalFail++; return false; }\n" +
-"      var d = await res.json();\n" +
-"      if (d.Redirect||(d.Data&&d.Data.Booked)) {\n" +
-"        totalOk++; booked = true;\n" +
-"        console.log('[BOOKED!] Court: '+(sess.zone?sess.zone.Name:''));\n" +
-"        console.log('Stats: '+totalSent+' sent, '+totalOk+' ok, '+totalFail+' fail');\n" +
-"        if (d.Redirect) {\n" +
-"          console.log('Payment: '+d.Redirect);\n" +
-"          window.location.href = d.Redirect;\n" +
-"        }\n" +
-"        return true;\n" +
-"      }\n" +
-"      return false;\n" +
-"    } catch(_) { totalFail++; return false; }\n" +
-"  }\n" +
-"\n" +
-"  function poolSalvo() {\n" +
-"    if (booked) return Promise.resolve(false);\n" +
-"    var requests = [];\n" +
-"    for (var i = 0; i < sessionPool.length; i++) {\n" +
-"      for (var j = 0; j < PARALLEL_SHOTS; j++) {\n" +
-"        requests.push(tryStep3(sessionPool[i]));\n" +
-"      }\n" +
-"    }\n" +
-"    return Promise.all(requests).then(function(r){return r.some(function(x){return x});});\n" +
-"  }\n" +
-"\n" +
-"  async function fireBlitz() {\n" +
-"    if (keepaliveTimer) { clearInterval(keepaliveTimer); keepaliveTimer = null; }\n" +
-"    console.log('[FIRING] '+sessionPool.length+' sessions x '+PARALLEL_SHOTS+' = '+ (sessionPool.length*PARALLEL_SHOTS) +' per wave');\n" +
-"    var deadline = OPEN_AT_MS + serverClockOffset + 300 * 1000;\n" +
-"    var frt = setInterval(function() {\n" +
-"      if (booked) { clearInterval(frt); return; }\n" +
-"      (async function() { availableZones = null; try { await refreshPool(); } catch(e) {} })();\n" +
-"    }, KEEPALIVE_MS);\n" +
-"    function fireWave() {\n" +
-"      if (booked || Date.now() > deadline) { clearInterval(frt); return; }\n" +
-"      waveCount++;\n" +
-"      console.log('[WAVE] #' + waveCount);\n" +
-"      poolSalvo().catch(function(){});\n" +
-"      setTimeout(fireWave, WAVE_INTERVAL_MS);\n" +
-"    }\n" +
-"    fireWave();\n" +
-"    await new Promise(function(resolve) {\n" +
-"      var c = setInterval(function() {\n" +
-"        if (booked || Date.now() > deadline) { clearInterval(c); clearInterval(frt); resolve(); }\n" +
-"      }, 10);\n" +
-"    });\n" +
-"    if (!booked) {\n" +
-"      console.error('[FAIL] No court after '+(RETRY_DURATION_MS/1000)+'s | Waves: '+waveCount+' | Sent: '+totalSent+' | OK: '+totalOk+' | Fail: '+totalFail);\n" +
-"      if (totalFail > totalOk && totalFail > 0) console.warn('[WARN] High failure rate - check network, token, or rate limiting');\n" +
-"    }\n" +
-"  }\n" +
-"\n" +
-"  async function prewarm() {\n" +
-"    console.log('[OK] Pre-warming...');\n" +
-"    var reqs = [];\n" +
-"    for (var i = 0; i < 12; i++) {\n" +
-"      reqs.push(fetch(BASE+'/FacilityBookings/BuyProductBeforeBookingFacility/Start?clubId='+CLUB_ID+'&zoneTypeId='+ZONE_TYPE+'&date='+getOpenDate()+'&startDate='+START_TIME,{credentials:'include',headers:authHeaders()}));\n" +
-"    }\n" +
-"    await Promise.all(reqs.map(function(f){return f.catch(function(){});}));\n" +
-"    console.log('[OK] Warmed');\n" +
-"  }\n" +
-"\n" +
-"  var preRebuilt = false;\n" +
-"\n" +
-"  async function measureLatency() {\n" +
-"    var start = performance.now();\n" +
-"    try { await fetch(BASE+'/FacilityBookings/BuyProductBeforeBookingFacility/Start?clubId='+CLUB_ID+'&zoneTypeId='+ZONE_TYPE+'&date='+getOpenDate()+'&startDate='+START_TIME,{credentials:'include',headers:authHeaders(),mode:'cors'}); } catch(e) {}\n" +
-"    var latency = performance.now() - start;\n" +
-"    var total = 0;\n" +
-"    for (var i = 0; i < 2; i++) {\n" +
-"      var s = performance.now();\n" +
-"      try { await fetch(BASE+'/FacilityBookings/BuyProductBeforeBookingFacility/Start?clubId='+CLUB_ID+'&zoneTypeId='+ZONE_TYPE+'&date='+getOpenDate()+'&startDate='+START_TIME,{credentials:'include',headers:authHeaders(),mode:'cors'}); } catch(e) {}\n" +
-"      total += performance.now() - s;\n" +
-"    }\n" +
-"    measuredLatency = (latency + total / 2);\n" +
-"    console.log('[OK] Measured latency: ' + Math.round(measuredLatency) + 'ms');\n" +
-"    return measuredLatency;\n" +
-"  }\n" +
-"\n" +
-"  function countdown() {\n" +
-"    var ms = (OPEN_AT_MS + serverClockOffset) - Date.now();\n" +
-"    var fireWindow = Math.max(measuredLatency * 3, 1500);\n" +
-"    if (ms <= (fireWindow + 1000) && !preRebuilt) {\n" +
-"      preRebuilt = true;\n" +
-"      console.log('[OK] Pre-rebuilding fresh sessions...');\n" +
-"      (async function() { try { availableZones = null; await refreshPool(); } catch(e) {} })();\n" +
-"    }\n" +
-"    if (ms <= fireWindow) {\n" +
-"      console.log('[FIRING] Early window: '+Math.round(fireWindow)+'ms');\n" +
-"      fireBlitz();\n" +
-"      return;\n" +
-"    }\n" +
-"    var h = Math.floor(ms / 3600000);\n" +
-"    var m = Math.floor((ms % 3600000) / 60000);\n" +
-"    var s = Math.floor((ms % 60000) / 1000);\n" +
-"    var msg = '[TIMER] ' + pad(h) + 'h ' + pad(m) + 'm ' + pad(s) + 's' + (clockSynced ? ' (synced)' : '');\n" +
-"    if (ms < 60000) console.log(msg);\n" +
-"    else if (ms < 300000) console.info(msg);\n" +
-"    setTimeout(countdown, ms > 300000 ? 30000 : (ms > 60000 ? 10000 : (ms > 10000 ? 1000 : 100)));\n" +
-"  }\n" +
-"\n" +
-"  console.log('==============================');\n" +
-"  console.log('[OK] KALLANG BOOKER v4');\n" +
-"  console.log('[OK] '+SLOT_DATE+' '+START_TIME.slice(11,16)+' | User '+USER_ID+' | Rule '+RULE_ID+' | '+DURATION+'min');\n" +
-"  console.log('[OK] Syncing clock...');\n" +
-"  await syncServerClock();\n" +
-"  console.log('[OK] Measuring server latency...');\n" +
-"  await measureLatency();\n" +
-"  await prewarm();\n" +
-"  console.log('[OK] Building pool ('+SESSIONS_PER_COURT+' per court)...');\n" +
-"  var ok = false;\n" +
-"  for (var i = 1; i <= 5; i++) {\n" +
-"    await refreshPool();\n" +
-"    if (sessionPool.length) { ok = true; break; }\n" +
-"    console.warn('[WARN] Attempt '+i+' failed, retry in 3s...');\n" +
-"    await new Promise(function(r){setTimeout(r,3000)});\n" +
-"  }\n" +
-"  if (!ok) { console.error('[ERR] Setup failed'); return; }\n" +
-"  var wl = null;\n" +
-"  (async function() {\n" +
-"    if (!('wakeLock' in navigator)) return;\n" +
-"    try {\n" +
-"      wl = await navigator.wakeLock.request('screen');\n" +
-"      console.log('[OK] Wake lock acquired');\n" +
-"      wl.addEventListener('release', function() { if (!booked) { (async function(){ if (!('wakeLock' in navigator)) return; try { wl = await navigator.wakeLock.request('screen'); } catch(e) {} })(); } });\n" +
-"    } catch(e) {}\n" +
-"  })();\n" +
-"  var eo = OPEN_AT_MS + serverClockOffset;\n" +
-"  var ml = eo - Date.now();\n" +
-"  if (ml <= PREFIRE_MS) {\n" +
-"    console.log('[FIRING] Window open - NOW!');\n" +
-"    await fireBlitz();\n" +
-"  } else {\n" +
-"    var h2 = Math.floor(ml / 3600000);\n" +
-"    var m2 = Math.floor((ml % 3600000) / 60000);\n" +
-"    console.log('[OK] Armed! Opens in ' + h2 + 'h ' + m2 + 'm');\n" +
-"    console.log('[OK] Pool: '+sessionPool.length+' sessions | Refresh: '+(KEEPALIVE_MS/1000)+'s');\n" +
-"    keepaliveTimer = setInterval(function() {\n" +
-"      if (booked || (eo - Date.now() < 5000)) { clearInterval(keepaliveTimer); return; }\n" +
-"      (async function() { try { availableZones = null; await refreshPool(); } catch(e) {} })();\n" +
-"    }, KEEPALIVE_MS);\n" +
-"    countdown();\n" +
-"  }\n" +
-"  if (wl) { wl.release().catch(function(){}); }\n" +
-"})();\n";
+"(async function() {
+  'use strict';
+  var OPEN_AT_MS = " + openMs + ";
+  var START_TIME = '" + startTime + "';
+  var SLOT_DATE = '" + date + "';
+  var USER_ID = " + userId + ";
+  var RULE_ID = " + ruleId + ";
+  var DURATION = " + duration + ";
+  var TOKEN = '" + token.replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\n/g,'\\n').replace(/\r/g,'\\r') + "';
+  var BASE = 'https://thekallang.perfectgym.com/clientportal2';
+  var CLUB_ID = 1;
+  var ZONE_TYPE = 31;
+  var RETRY_DURATION_MS = 300 * 1000;
+  var PARALLEL_SHOTS = 2;
+  var WAVE_INTERVAL_MS = 40;
+  var KEEPALIVE_MS = 5000;
+  var SESSIONS_PER_COURT = 5;
+  var SERVER_CLOCK_RETRIES = 8;
+  var PREFIRE_MS = 3000;
+  var POOL_LOW_THRESHOLD = 0.3;
+  var sessionPool = [], booked = false, keepaliveTimer = null, wakeLock = null;
+  var serverClockOffset = 0, clockSynced = false;
+  var waveCount = 0, totalSent = 0, totalOk = 0, totalFail = 0, rateLimited = 0;
+  var measuredLatency = 0;
+  var originalPoolCount = 0;
+  var availableZones = null;
+  var preRebuilt = false;
+
+  function pad(n) { return String(Math.floor(n)).padStart(2,'0'); }
+
+  function getOpenDate() {
+    var d = new Date(OPEN_AT_MS + serverClockOffset);
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  }
+
+  function authHeaders() {
+    return {'Accept':'application/json, text/plain, */*','Authorization':'Bearer '+TOKEN,'X-Requested-With':'XMLHttpRequest','CP-LANG':'en','CP-MODE':'desktop'};
+  }
+
+  async function syncServerClock() {
+    for (var i = 1; i <= SERVER_CLOCK_RETRIES; i++) {
+      try {
+        var t0 = Date.now();
+        var r = await fetch(BASE+'/FacilityBookings/BuyProductBeforeBookingFacility/Start?clubId='+CLUB_ID+'&zoneTypeId='+ZONE_TYPE+'&date='+getOpenDate()+'&startDate='+START_TIME,{credentials:'include',headers:authHeaders(),mode:'cors'});
+        var t1 = Date.now();
+        var sd = r.headers.get('date')||r.headers.get('Date');
+        if (sd) { serverClockOffset = new Date(sd).getTime()-(t0+(t1-t0)/2); clockSynced=true; console.log('[OK] Clock synced. Offset: '+serverClockOffset+'ms'); return true; }
+      } catch(e) { console.warn('Clock sync attempt '+i+' failed'); }
+      await new Promise(function(r){setTimeout(r,500)});
+    }
+    console.warn('[WARN] Could not sync clock'); return false;
+  }
+
+  async function fetchZones() {
+    var r = await fetch(BASE+'/FacilityBookings/BuyProductBeforeBookingFacility/Start?clubId='+CLUB_ID+'&zoneTypeId='+ZONE_TYPE+'&date='+getOpenDate()+'&startDate='+START_TIME,{credentials:'include',headers:authHeaders()});
+    if (!r.ok) return null;
+    var d = await r.json();
+    var z = (d.Data&&d.Data.Zones)?d.Data.Zones:[];
+    if (!z.length) return null;
+    z.sort(function(a,b){return (parseInt((b.Name.match(/\\d+$/)||['0'])[0])||0)-(parseInt((a.Name.match(/\\d+$/)||['0'])[0])||0);});
+    return z;
+  }
+
+  async function buildSession(zone) {
+    try {
+      var r1 = await fetch(BASE+'/FacilityBookings/BuyProductBeforeBookingFacility/Start?clubId='+CLUB_ID+'&zoneTypeId='+ZONE_TYPE+'&date='+getOpenDate()+'&startDate='+START_TIME,{credentials:'include',headers:authHeaders()});
+      if (!r1.ok) return null;
+      var sid = r1.headers.get('cp-buy-product-before-booking-fb-session-id');
+      if (!sid) return null;
+      var h = {'Content-Type':'application/json;charset=utf-8','Accept':'application/json, text/plain, */*','Authorization':'Bearer '+TOKEN,'X-Hash':'#/FacilityBooking?clubId='+CLUB_ID+'&zoneTypeId='+ZONE_TYPE+'&date='+SLOT_DATE,'BAF-WIZARD-CURRENTURL':BASE+'/#/FacilityBooking?clubId='+CLUB_ID+'&zoneTypeId='+ZONE_TYPE+'&date='+SLOT_DATE+'&sessionId='+sid,'CP-BUY-PRODUCT-BEFORE-BOOKING-FB-SESSION-ID':sid,'X-Requested-With':'XMLHttpRequest','CP-LANG':'en','CP-MODE':'desktop'};
+      var r2 = await fetch(BASE+'/FacilityBookings/WizardSteps/SetFacilityBookingDetailsWizardStep/Next',{method:'POST',credentials:'include',headers:h,body:JSON.stringify({UserId:USER_ID,ZoneId:zone.Id,StartTime:START_TIME,RequiredNumberOfSlots:null,Duration:DURATION})});
+      if (!r2.ok) return null;
+      return {sessionId:sid,zoneId:zone.Id,zone:zone};
+    } catch(_) { return null; }
+  }
+
+  async function refreshPool() {
+    if (!availableZones) {
+      availableZones = await fetchZones();
+      if (!availableZones) { console.log('[ERR] No zones'); return; }
+      console.log('[OK] Courts: '+availableZones.map(function(z){return z.Name}).join(', '));
+    }
+    var builds = [];
+    for (var i = 0; i < availableZones.length; i++) {
+      for (var j = 0; j < SESSIONS_PER_COURT; j++) {
+        builds.push(buildSession(availableZones[i]));
+      }
+    }
+    var res = await Promise.all(builds);
+    sessionPool = res.filter(function(x){return x});
+    originalPoolCount = sessionPool.length;
+    console.log('[OK] Pool: '+sessionPool.length+'/'+(availableZones.length*SESSIONS_PER_COURT)+' sessions');
+  }
+
+  async function tryStep3(sess) {
+    if (booked) return false;
+    var h = {'Content-Type':'application/json;charset=utf-8','Accept':'application/json, text/plain, */*','Authorization':'Bearer '+TOKEN,'X-Hash':'#/FacilityBooking?clubId='+CLUB_ID+'&zoneTypeId='+ZONE_TYPE+'&date='+SLOT_DATE,'BAF-WIZARD-CURRENTURL':BASE+'/#/FacilityBooking?clubId='+CLUB_ID+'&zoneTypeId='+ZONE_TYPE+'&date='+SLOT_DATE+'&sessionId='+sess.sessionId,'CP-BUY-PRODUCT-BEFORE-BOOKING-FB-SESSION-ID':sess.sessionId,'X-Requested-With':'XMLHttpRequest','CP-LANG':'en','CP-MODE':'desktop'};
+    try {
+      var res = await fetch(BASE+'/FacilityBookings/WizardSteps/ChooseBookingRuleStep/Next',{method:'POST',credentials:'include',headers:h,body:JSON.stringify({ruleId:RULE_ID,OtherCalendarEventBookedAtRequestedTime:false,HasUserRequiredProducts:false})});
+      totalSent++;
+      if (res.status === 429) { rateLimited++; return false; }
+      if (!res.ok) { totalFail++; return false; }
+      var d = await res.json();
+      if (d.Redirect||(d.Data&&d.Data.Booked)) {
+        totalOk++; booked = true;
+        console.log('[BOOKED!] Court: '+(sess.zone?sess.zone.Name:''));
+        console.log('Stats: '+totalSent+' sent, '+totalOk+' ok, '+totalFail+' fail, '+rateLimited+' rate-limited');
+        releaseWakeLock();
+        if (d.Redirect) {
+          console.log('Payment: '+d.Redirect);
+          window.location.href = d.Redirect;
+        }
+        return true;
+      }
+      return false;
+    } catch(_) { totalFail++; return false; }
+  }
+
+  function poolSalvo() {
+    if (booked) return Promise.resolve(false);
+    var requests = [];
+    for (var i = 0; i < sessionPool.length; i++) {
+      for (var j = 0; j < PARALLEL_SHOTS; j++) {
+        requests.push(tryStep3(sessionPool[i]));
+      }
+    }
+    return Promise.all(requests).then(function(r){return r.some(function(x){return x});});
+  }
+
+  function shouldRebuild() {
+    if (originalPoolCount === 0) return false;
+    return sessionPool.length < originalPoolCount * POOL_LOW_THRESHOLD;
+  }
+
+  function releaseWakeLock() {
+    if (wakeLock) { wakeLock.release().catch(function(){}); wakeLock = null; }
+  }
+
+  async function fireBlitz() {
+    if (keepaliveTimer) { clearInterval(keepaliveTimer); keepaliveTimer = null; }
+    console.log('[FIRING] '+sessionPool.length+' sessions x '+PARALLEL_SHOTS+' = '+(sessionPool.length*PARALLEL_SHOTS)+' per wave');
+    var deadline = OPEN_AT_MS + serverClockOffset + RETRY_DURATION_MS;
+    var frt = setInterval(function() {
+      if (booked) { clearInterval(frt); return; }
+      if (!shouldRebuild()) {
+        (async function() { try { availableZones = null; await refreshPool(); } catch(e) {} })();
+      }
+    }, KEEPALIVE_MS);
+    function fireWave() {
+      if (booked || Date.now() > deadline) { clearInterval(frt); return; }
+      waveCount++;
+      if (rateLimited > 5 && waveCount % 5 === 0) {
+        console.warn('[RATE] '+rateLimited+' rate-limited responses detected, slowing down');
+      }
+      console.log('[WAVE] #' + waveCount + (shouldRebuild() ? ' (pool low)' : ''));
+      poolSalvo().catch(function(){});
+      setTimeout(fireWave, WAVE_INTERVAL_MS);
+    }
+    fireWave();
+    await new Promise(function(resolve) {
+      var c = setInterval(function() {
+        if (booked || Date.now() > deadline) { clearInterval(c); clearInterval(frt); resolve(); }
+      }, 10);
+    });
+    releaseWakeLock();
+    if (!booked) {
+      console.error('[FAIL] No court after '+(RETRY_DURATION_MS/1000)+'s | Waves: '+waveCount+' | Sent: '+totalSent+' | OK: '+totalOk+' | Fail: '+totalFail+' | Rate-limited: '+rateLimited);
+      if (totalFail > totalOk && totalFail > 0) console.warn('[WARN] High failure rate - check network, token, or rate limiting');
+      if (rateLimited > totalFail) console.warn('[WARN] Heavy rate limiting - consider reducing PARALLEL_SHOTS or increasing WAVE_INTERVAL_MS');
+    }
+  }
+
+  async function prewarm() {
+    console.log('[OK] Pre-warming...');
+    var reqs = [];
+    for (var i = 0; i < 12; i++) {
+      reqs.push(fetch(BASE+'/FacilityBookings/BuyProductBeforeBookingFacility/Start?clubId='+CLUB_ID+'&zoneTypeId='+ZONE_TYPE+'&date='+getOpenDate()+'&startDate='+START_TIME,{credentials:'include',headers:authHeaders()}));
+    }
+    await Promise.all(reqs.map(function(f){return f.catch(function(){});}));
+    console.log('[OK] Warmed');
+  }
+
+  async function measureLatency() {
+    var start = performance.now();
+    try { await fetch(BASE+'/FacilityBookings/BuyProductBeforeBookingFacility/Start?clubId='+CLUB_ID+'&zoneTypeId='+ZONE_TYPE+'&date='+getOpenDate()+'&startDate='+START_TIME,{credentials:'include',headers:authHeaders(),mode:'cors'}); } catch(e) {}
+    var latency = performance.now() - start;
+    var total = 0;
+    for (var i = 0; i < 2; i++) {
+      var s = performance.now();
+      try { await fetch(BASE+'/FacilityBookings/BuyProductBeforeBookingFacility/Start?clubId='+CLUB_ID+'&zoneTypeId='+ZONE_TYPE+'&date='+getOpenDate()+'&startDate='+START_TIME,{credentials:'include',headers:authHeaders(),mode:'cors'}); } catch(e) {}
+      total += performance.now() - s;
+    }
+    measuredLatency = (latency + total / 2);
+    console.log('[OK] Measured latency: ' + Math.round(measuredLatency) + 'ms');
+    return measuredLatency;
+  }
+
+  function countdown() {
+    var ms = (OPEN_AT_MS + serverClockOffset) - Date.now();
+    var fireWindow = Math.max(measuredLatency * 3, 1500);
+    if (ms <= (fireWindow + 1000) && !preRebuilt) {
+      preRebuilt = true;
+      console.log('[OK] Pre-rebuilding fresh sessions...');
+      (async function() {
+        try {
+          availableZones = null;
+          await refreshPool();
+          console.log('[OK] Pre-rebuild complete: ' + sessionPool.length + ' sessions');
+        } catch(e) { console.warn('[WARN] Pre-rebuild failed'); }
+      })();
+    }
+    if (ms <= fireWindow) {
+      console.log('[FIRING] Early window: '+Math.round(fireWindow)+'ms');
+      fireBlitz();
+      return;
+    }
+    var h = Math.floor(ms / 3600000);
+    var m = Math.floor((ms % 3600000) / 60000);
+    var s = Math.floor((ms % 60000) / 1000);
+    var msg = '[TIMER] ' + pad(h) + 'h ' + pad(m) + 'm ' + pad(s) + 's' + (clockSynced ? ' (synced)' : '');
+    if (ms < 60000) console.log(msg);
+    else if (ms < 300000) console.info(msg);
+    setTimeout(countdown, ms > 300000 ? 30000 : (ms > 60000 ? 10000 : (ms > 10000 ? 1000 : 100)));
+  }
+
+  console.log('==============================');
+  console.log('[OK] KALLANG BOOKER v5');
+  console.log('[OK] '+SLOT_DATE+' '+START_TIME.slice(11,16)+' | User '+USER_ID+' | Rule '+RULE_ID+' | '+DURATION+'min');
+  console.log('[OK] Syncing clock...');
+  await syncServerClock();
+  console.log('[OK] Measuring server latency...');
+  await measureLatency();
+  await prewarm();
+  console.log('[OK] Building pool ('+SESSIONS_PER_COURT+' per court)...');
+  var ok = false;
+  for (var i = 1; i <= 5; i++) {
+    await refreshPool();
+    if (sessionPool.length) { ok = true; break; }
+    console.warn('[WARN] Attempt '+i+' failed, retry in 3s...');
+    await new Promise(function(r){setTimeout(r,3000)});
+  }
+  if (!ok) { console.error('[ERR] Setup failed'); return; }
+  (async function() {
+    if (!('wakeLock' in navigator)) return;
+    try {
+      wakeLock = await navigator.wakeLock.request('screen');
+      console.log('[OK] Wake lock acquired');
+      wakeLock.addEventListener('release', function() {
+        if (!booked) {
+          (async function(){
+            if (!('wakeLock' in navigator)) return;
+            try { wakeLock = await navigator.wakeLock.request('screen'); } catch(e) {}
+          })();
+        }
+      });
+    } catch(e) { console.warn('[WARN] Wake lock failed'); }
+  })();
+  var eo = OPEN_AT_MS + serverClockOffset;
+  var ml = eo - Date.now();
+  if (ml <= PREFIRE_MS) {
+    console.log('[FIRING] Window open - NOW!');
+    await fireBlitz();
+  } else {
+    var h2 = Math.floor(ml / 3600000);
+    var m2 = Math.floor((ml % 3600000) / 60000);
+    console.log('[OK] Armed! Opens in ' + h2 + 'h ' + m2 + 'm');
+    console.log('[OK] Pool: '+sessionPool.length+' sessions | Refresh: '+(KEEPALIVE_MS/1000)+'s');
+    keepaliveTimer = setInterval(function() {
+      if (booked || (eo - Date.now() < 5000)) { clearInterval(keepaliveTimer); return; }
+      if (!shouldRebuild()) {
+        (async function() { try { availableZones = null; await refreshPool(); } catch(e) {} })();
+      }
+    }, KEEPALIVE_MS);
+    countdown();
+  }
+})();
+";
 
       document.getElementById('script-preview').textContent = generatedScript.slice(0, 300) + '...';
       document.getElementById('setup-screen').classList.add('hidden');
@@ -499,11 +540,13 @@
         var v = localStorage.getItem('kb_' + id);
         if (v) document.getElementById(id).value = v;
       });
+      setDateMin();
       updateOpens();
     });
 
     if ('serviceWorker' in navigator) { navigator.serviceWorker.register('./sw.js').catch(function(){}); }
 
+    window.setDateMin = setDateMin;
     window.updateOpens = updateOpens;
     window.generate = generate;
     window.copyScript = copyScript;
