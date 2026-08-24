@@ -8,7 +8,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Booker">
-  <title>Kallang Booker</title>
+  <title>Kallang Booker Nuclear</title>
   <style>
     :root {
       --bg:       #0a1628;
@@ -17,9 +17,8 @@
       --green:    #1D9E75;
       --green-dk: #0F6E56;
       --green-lt: #9FE1CB;
-      --green-bg: #0b2a20;
-      --amber:    #f59e0b;
       --red:      #ef4444;
+      --amber:    #f59e0b;
       --text:     #e2e8f0;
       --muted:    #64748b;
       --mono:     'JetBrains Mono', 'Fira Mono', monospace;
@@ -98,7 +97,7 @@
     <div class="header-icon">🏸</div>
     <div>
       <div class="header-title">Kallang Booker</div>
-      <div class="header-sub">Auto-book badminton courts</div>
+      <div class="header-sub">Nuclear auto-booker</div>
     </div>
   </div>
 
@@ -230,14 +229,14 @@
 "  var BASE = 'https://thekallang.perfectgym.com/clientportal2';\n" +
 "  var CLUB_ID = 1;\n" +
 "  var ZONE_TYPE = 31;\n" +
-"  var RETRY_DURATION_MS = 300 * 1000;\n" +
-"  var PARALLEL_SHOTS = 3;\n" +
-"  var WAVE_INTERVAL_MS = 20;\n" +
-"  var KEEPALIVE_MS = 5000;\n" +
-"  var SESSIONS_PER_COURT = 5;\n" +
-"  var SERVER_CLOCK_RETRIES = 8;\n" +
-"  var PREFIRE_MS = 3000;\n" +
-"  var POOL_LOW_THRESHOLD = 0.3;\n" +
+"  var RETRY_DURATION_MS = 600 * 1000;\n" +
+"  var PARALLEL_SHOTS = 8;\n" +
+"  var WAVE_INTERVAL_MS = 5;\n" +
+"  var KEEPALIVE_MS = 1500;\n" +
+"  var SESSIONS_PER_COURT = 20;\n" +
+"  var SERVER_CLOCK_RETRIES = 20;\n" +
+"  var PREFIRE_MS = 15000;\n" +
+"  var POOL_LOW_THRESHOLD = 0.15;\n" +
 "  var sessionPool = [], booked = false, keepaliveTimer = null, wakeLock = null;\n" +
 "  var serverClockOffset = 0, clockSynced = false;\n" +
 "  var waveCount = 0, totalSent = 0, totalOk = 0, totalFail = 0, rateLimited = 0;\n" +
@@ -254,7 +253,7 @@
 "  }\n" +
 "\n" +
 "  function authHeaders() {\n" +
-"    return {'Accept':'application/json, text/plain, */*','Authorization':'Bearer '+TOKEN,'X-Requested-With':'XMLHttpRequest','CP-LANG':'en','CP-MODE':'desktop'};\n" +
+"    return {'Accept':'application/json, text/plain, */*','Authorization':'***'+TOKEN,'X-Requested-With':'XMLHttpRequest','CP-LANG':'en','CP-MODE':'desktop'};\n" +
 "  }\n" +
 "\n" +
 "  async function syncServerClock() {\n" +
@@ -266,7 +265,7 @@
 "        var sd = r.headers.get('date')||r.headers.get('Date');\n" +
 "        if (sd) { serverClockOffset = new Date(sd).getTime()-(t0+(t1-t0)/2); clockSynced=true; console.log('[OK] Clock synced. Offset: '+serverClockOffset+'ms'); return true; }\n" +
 "      } catch(e) { console.warn('Clock sync attempt '+i+' failed'); }\n" +
-"      await new Promise(function(r){setTimeout(r,500)});\n" +
+"      await new Promise(function(r){setTimeout(r,300)});\n" +
 "    }\n" +
 "    console.warn('[WARN] Could not sync clock'); return false;\n" +
 "  }\n" +
@@ -287,7 +286,7 @@
 "      if (!r1.ok) return null;\n" +
 "      var sid = r1.headers.get('cp-buy-product-before-booking-fb-session-id');\n" +
 "      if (!sid) return null;\n" +
-"      var h = {'Content-Type':'application/json;charset=utf-8','Accept':'application/json, text/plain, */*','Authorization':'Bearer '+TOKEN,'X-Hash':'#/FacilityBooking?clubId='+CLUB_ID+'&zoneTypeId='+ZONE_TYPE+'&date='+SLOT_DATE,'BAF-WIZARD-CURRENTURL':BASE+'/#/FacilityBooking?clubId='+CLUB_ID+'&zoneTypeId='+ZONE_TYPE+'&date='+SLOT_DATE+'&sessionId='+sid,'CP-BUY-PRODUCT-BEFORE-BOOKING-FB-SESSION-ID':sid,'X-Requested-With':'XMLHttpRequest','CP-LANG':'en','CP-MODE':'desktop'};\n" +
+"      var h = {'Content-Type':'application/json;charset=utf-8','Accept':'application/json, text/plain, */*','Authorization':'***'+TOKEN,'X-Hash':'#/FacilityBooking?clubId='+CLUB_ID+'&zoneTypeId='+ZONE_TYPE+'&date='+SLOT_DATE,'BAF-WIZARD-CURRENTURL':BASE+'/#/FacilityBooking?clubId='+CLUB_ID+'&zoneTypeId='+ZONE_TYPE+'&date='+SLOT_DATE+'&sessionId='+sid,'CP-BUY-PRODUCT-BEFORE-BOOKING-FB-SESSION-ID':sid,'X-Requested-With':'XMLHttpRequest','CP-LANG':'en','CP-MODE':'desktop'};\n" +
 "      var r2 = await fetch(BASE+'/FacilityBookings/WizardSteps/SetFacilityBookingDetailsWizardStep/Next',{method:'POST',credentials:'include',headers:h,body:JSON.stringify({UserId:USER_ID,ZoneId:zone.Id,StartTime:START_TIME,RequiredNumberOfSlots:null,Duration:DURATION})});\n" +
 "      if (!r2.ok) return null;\n" +
 "      return {sessionId:sid,zoneId:zone.Id,zone:zone};\n" +
@@ -314,7 +313,7 @@
 "\n" +
 "  async function tryStep3(sess) {\n" +
 "    if (booked) return false;\n" +
-"    var h = {'Content-Type':'application/json;charset=utf-8','Accept':'application/json, text/plain, */*','Authorization':'Bearer '+TOKEN,'X-Hash':'#/FacilityBooking?clubId='+CLUB_ID+'&zoneTypeId='+ZONE_TYPE+'&date='+SLOT_DATE,'BAF-WIZARD-CURRENTURL':BASE+'/#/FacilityBooking?clubId='+CLUB_ID+'&zoneTypeId='+ZONE_TYPE+'&date='+SLOT_DATE+'&sessionId='+sess.sessionId,'CP-BUY-PRODUCT-BEFORE-BOOKING-FB-SESSION-ID':sess.sessionId,'X-Requested-With':'XMLHttpRequest','CP-LANG':'en','CP-MODE':'desktop'};\n" +
+"    var h = {'Content-Type':'application/json;charset=utf-8','Accept':'application/json, text/plain, */*','Authorization':'***'+TOKEN,'X-Hash':'#/FacilityBooking?clubId='+CLUB_ID+'&zoneTypeId='+ZONE_TYPE+'&date='+SLOT_DATE,'BAF-WIZARD-CURRENTURL':BASE+'/#/FacilityBooking?clubId='+CLUB_ID+'&zoneTypeId='+ZONE_TYPE+'&date='+SLOT_DATE+'&sessionId='+sess.sessionId,'CP-BUY-PRODUCT-BEFORE-BOOKING-FB-SESSION-ID':sess.sessionId,'X-Requested-With':'XMLHttpRequest','CP-LANG':'en','CP-MODE':'desktop'};\n" +
 "    try {\n" +
 "      var res = await fetch(BASE+'/FacilityBookings/WizardSteps/ChooseBookingRuleStep/Next',{method:'POST',credentials:'include',headers:h,body:JSON.stringify({ruleId:RULE_ID,OtherCalendarEventBookedAtRequestedTime:false,HasUserRequiredProducts:false})});\n" +
 "      totalSent++;\n" +
@@ -370,7 +369,7 @@
 "      if (booked || Date.now() > deadline) { clearInterval(frt); return; }\n" +
 "      waveCount++;\n" +
 "      if (rateLimited > 5 && waveCount % 5 === 0) {\n" +
-"        console.warn('[RATE] '+rateLimited+' rate-limited responses detected, slowing down');\n" +
+"        console.warn('[RATE] '+rateLimited+' rate-limited responses detected');\n" +
 "      }\n" +
 "      console.log('[WAVE] #' + waveCount + (shouldRebuild() ? ' (pool low)' : ''));\n" +
 "      poolSalvo().catch(function(){});\n" +
@@ -393,7 +392,7 @@
 "  async function prewarm() {\n" +
 "    console.log('[OK] Pre-warming...');\n" +
 "    var reqs = [];\n" +
-"    for (var i = 0; i < 12; i++) {\n" +
+"    for (var i = 0; i < 24; i++) {\n" +
 "      reqs.push(fetch(BASE+'/FacilityBookings/BuyProductBeforeBookingFacility/Start?clubId='+CLUB_ID+'&zoneTypeId='+ZONE_TYPE+'&date='+getOpenDate()+'&startDate='+START_TIME,{credentials:'include',headers:authHeaders()}));\n" +
 "    }\n" +
 "    await Promise.all(reqs.map(function(f){return f.catch(function(){});}));\n" +
@@ -417,8 +416,8 @@
 "\n" +
 "  function countdown() {\n" +
 "    var ms = (OPEN_AT_MS + serverClockOffset) - Date.now();\n" +
-"    var fireWindow = Math.max(measuredLatency * 3, 1500);\n" +
-"    if (ms <= (fireWindow + 1000) && !preRebuilt) {\n" +
+"    var fireWindow = Math.max(measuredLatency * 3, 2000);\n" +
+"    if (ms <= (fireWindow + 1500) && !preRebuilt) {\n" +
 "      preRebuilt = true;\n" +
 "      console.log('[OK] Pre-rebuilding fresh sessions...');\n" +
 "      (async function() {\n" +
@@ -444,7 +443,7 @@
 "  }\n" +
 "\n" +
 "  console.log('==============================');\n" +
-"  console.log('[OK] KALLANG BOOKER v5');\n" +
+"  console.log('[OK] KALLANG BOOKER v7 NUCLEAR');\n" +
 "  console.log('[OK] '+SLOT_DATE+' '+START_TIME.slice(11,16)+' | User '+USER_ID+' | Rule '+RULE_ID+' | '+DURATION+'min');\n" +
 "  console.log('[OK] Syncing clock...');\n" +
 "  await syncServerClock();\n" +
@@ -453,11 +452,11 @@
 "  await prewarm();\n" +
 "  console.log('[OK] Building pool ('+SESSIONS_PER_COURT+' per court)...');\n" +
 "  var ok = false;\n" +
-"  for (var i = 1; i <= 5; i++) {\n" +
+"  for (var i = 1; i <= 8; i++) {\n" +
 "    await refreshPool();\n" +
 "    if (sessionPool.length) { ok = true; break; }\n" +
-"    console.warn('[WARN] Attempt '+i+' failed, retry in 3s...');\n" +
-"    await new Promise(function(r){setTimeout(r,3000)});\n" +
+"    console.warn('[WARN] Attempt '+i+' failed, retry in 2s...');\n" +
+"    await new Promise(function(r){setTimeout(r,2000)});\n" +
 "  }\n" +
 "  if (!ok) { console.error('[ERR] Setup failed'); return; }\n" +
 "  (async function() {\n" +
