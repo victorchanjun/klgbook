@@ -234,7 +234,7 @@
 "  var WAVE_INTERVAL_MS = 20;\n" +
 "  var KEEPALIVE_MS = 5000;\n" +
 "  var SESSIONS_PER_COURT = 5;\n" +
-"  var SERVER_CLOCK_RETRIES = 20;\n" +
+"  var SERVER_CLOCK_RETRIES = 5;\n" +
 "  var PREFIRE_MS = 15000;\n" +
 "  var POOL_LOW_THRESHOLD = 0.15;\n" +
 "  var sessionPool = [], booked = false, keepaliveTimer = null, wakeLock = null;\n" +
@@ -391,12 +391,10 @@
 "\n" +
 "  async function prewarm() {\n" +
 "    console.log('[OK] Pre-warming...');\n" +
-"    var reqs = [];\n" +
-"    for (var i = 0; i < 24; i++) {\n" +
-"      reqs.push(fetch(BASE+'/FacilityBookings/BuyProductBeforeBookingFacility/Start?clubId='+CLUB_ID+'&zoneTypeId='+ZONE_TYPE+'&date='+getOpenDate()+'&startDate='+START_TIME,{credentials:'include',headers:authHeaders()}));\n" +
+"    for (var i = 0; i < 3; i++) {\n" +
+"      try { await fetch(BASE+'/FacilityBookings/BuyProductBeforeBookingFacility/Start?clubId='+CLUB_ID+'&zoneTypeId='+ZONE_TYPE+'&date='+getOpenDate()+'&startDate='+START_TIME,{credentials:'include',headers:authHeaders()}); } catch(e) {}\n" +
+"      await new Promise(function(r){setTimeout(r,100)});\n" +
 "    }\n" +
-"    await Promise.all(reqs.map(function(f){return f.catch(function(){});}));\n" +
-"    console.log('[OK] Warmed');\n" +
 "  }\n" +
 "\n" +
 "  async function measureLatency() {\n" +
@@ -452,7 +450,7 @@
 "  await prewarm();\n" +
 "  console.log('[OK] Building pool ('+SESSIONS_PER_COURT+' per court)...');\n" +
 "  var ok = false;\n" +
-"  for (var i = 1; i <= 8; i++) {\n" +
+"  for (var i = 1; i <= 3; i++) {\n" +
 "    await refreshPool();\n" +
 "    if (sessionPool.length) { ok = true; break; }\n" +
 "    console.warn('[WARN] Attempt '+i+' failed, retry in 2s...');\n" +
