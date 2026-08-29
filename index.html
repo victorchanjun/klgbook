@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -94,7 +94,7 @@
 <body>
 
   <div class="header">
-    <div class="header-icon">🏸</div>
+    <div class="header-icon">ðŸ¸</div>
     <div>
       <div class="header-title">Kallang Booker</div>
       <div class="header-sub">Nuclear auto-booker</div>
@@ -145,7 +145,7 @@
     <div class="card">
       <div class="card-label">Bearer Token</div>
       <div class="field">
-        <label>JWT — no "Bearer " prefix</label>
+        <label>JWT â€” no "Bearer " prefix</label>
         <textarea id="token" placeholder="eyJhbGci..." autocomplete="off" autocorrect="off" spellcheck="false"></textarea>
       </div>
     </div>
@@ -163,8 +163,8 @@
       <button class="btn-primary" id="copy-btn">Copy Script</button>
       <a id="open-btn" class="btn-primary" style="margin-top:8px;background:var(--green-dk)"
          href="https://thekallang.perfectgym.com/clientportal2/#/FacilityBooking"
-         target="_blank" rel="noopener">Open Kallang →</a>
-      <button class="btn-secondary">← Back</button>
+         target="_blank" rel="noopener">Open Kallang â†’</a>
+      <button class="btn-secondary">â† Back</button>
     </div>
     <p style="font-size:11px;color:var(--muted);text-align:center;margin-top:4px;">
       Paste into the browser console on the Kallang tab. Keep the tab open.
@@ -253,7 +253,7 @@
 "  }\n" +
 "\n" +
 "  function authHeaders() {\n" +
-"    return {'Accept':'application/json, text/plain, */*','Authorization':'***'+TOKEN,'X-Requested-With':'XMLHttpRequest','CP-LANG':'en','CP-MODE':'desktop'};\n" +
+"    return {'Accept':'application/json, text/plain, */*','Authorization':'Bearer '+TOKEN,'X-Requested-With':'XMLHttpRequest','CP-LANG':'en','CP-MODE':'desktop'};\n" +
 "  }\n" +
 "\n" +
 "  async function syncServerClock() {\n" +
@@ -286,7 +286,7 @@
 "      if (!r1.ok) return null;\n" +
 "      var sid = r1.headers.get('cp-buy-product-before-booking-fb-session-id');\n" +
 "      if (!sid) return null;\n" +
-"      var h = {'Content-Type':'application/json;charset=utf-8','Accept':'application/json, text/plain, */*','Authorization':'***'+TOKEN,'X-Hash':'#/FacilityBooking?clubId='+CLUB_ID+'&zoneTypeId='+ZONE_TYPE+'&date='+SLOT_DATE,'BAF-WIZARD-CURRENTURL':BASE+'/#/FacilityBooking?clubId='+CLUB_ID+'&zoneTypeId='+ZONE_TYPE+'&date='+SLOT_DATE+'&sessionId='+sid,'CP-BUY-PRODUCT-BEFORE-BOOKING-FB-SESSION-ID':sid,'X-Requested-With':'XMLHttpRequest','CP-LANG':'en','CP-MODE':'desktop'};\n" +
+"      var h = {'Content-Type':'application/json;charset=utf-8','Accept':'application/json, text/plain, */*','Authorization':'Bearer '+TOKEN,'X-Hash':'#/FacilityBooking?clubId='+CLUB_ID+'&zoneTypeId='+ZONE_TYPE+'&date='+SLOT_DATE,'BAF-WIZARD-CURRENTURL':BASE+'/#/FacilityBooking?clubId='+CLUB_ID+'&zoneTypeId='+ZONE_TYPE+'&date='+SLOT_DATE+'&sessionId='+sid,'CP-BUY-PRODUCT-BEFORE-BOOKING-FB-SESSION-ID':sid,'X-Requested-With':'XMLHttpRequest','CP-LANG':'en','CP-MODE':'desktop'};\n" +
 "      var r2 = await fetch(BASE+'/FacilityBookings/WizardSteps/SetFacilityBookingDetailsWizardStep/Next',{method:'POST',credentials:'include',headers:h,body:JSON.stringify({UserId:USER_ID,ZoneId:zone.Id,StartTime:START_TIME,RequiredNumberOfSlots:null,Duration:DURATION})});\n" +
 "      if (!r2.ok) return null;\n" +
 "      return {sessionId:sid,zoneId:zone.Id,zone:zone};\n" +
@@ -313,7 +313,7 @@
 "\n" +
 "  async function tryStep3(sess) {\n" +
 "    if (booked) return false;\n" +
-"    var h = {'Content-Type':'application/json;charset=utf-8','Accept':'application/json, text/plain, */*','Authorization':'***'+TOKEN,'X-Hash':'#/FacilityBooking?clubId='+CLUB_ID+'&zoneTypeId='+ZONE_TYPE+'&date='+SLOT_DATE,'BAF-WIZARD-CURRENTURL':BASE+'/#/FacilityBooking?clubId='+CLUB_ID+'&zoneTypeId='+ZONE_TYPE+'&date='+SLOT_DATE+'&sessionId='+sess.sessionId,'CP-BUY-PRODUCT-BEFORE-BOOKING-FB-SESSION-ID':sess.sessionId,'X-Requested-With':'XMLHttpRequest','CP-LANG':'en','CP-MODE':'desktop'};\n" +
+"    var h = {'Content-Type':'application/json;charset=utf-8','Accept':'application/json, text/plain, */*','Authorization':'Bearer '+TOKEN,'X-Hash':'#/FacilityBooking?clubId='+CLUB_ID+'&zoneTypeId='+ZONE_TYPE+'&date='+SLOT_DATE,'BAF-WIZARD-CURRENTURL':BASE+'/#/FacilityBooking?clubId='+CLUB_ID+'&zoneTypeId='+ZONE_TYPE+'&date='+SLOT_DATE+'&sessionId='+sess.sessionId,'CP-BUY-PRODUCT-BEFORE-BOOKING-FB-SESSION-ID':sess.sessionId,'X-Requested-With':'XMLHttpRequest','CP-LANG':'en','CP-MODE':'desktop'};\n" +
 "    try {\n" +
 "      var res = await fetch(BASE+'/FacilityBookings/WizardSteps/ChooseBookingRuleStep/Next',{method:'POST',credentials:'include',headers:h,body:JSON.stringify({ruleId:RULE_ID,OtherCalendarEventBookedAtRequestedTime:false,HasUserRequiredProducts:false})});\n" +
 "      totalSent++;\n" +
