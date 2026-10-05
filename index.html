@@ -214,7 +214,6 @@
         const startTime = date + 'T' + time + ':00';
         const openMs = new Date(startTime).getTime() - 168 * 3600000;
 
-        // Generate script using template for clarity and correctness
         generatedScript = generateScript({
           openMs,
           startTime,
@@ -259,8 +258,9 @@
     serverClockRetries: 5,
     prefireMs: 15000,
     poolLowThreshold: 0.15,
-    maxConcurrency: 6,
-    warmupRequests: 3
+    maxConcurrency: 3,
+    warmupRequests: 2,
+    buildDelay: 100
   };
 
   // State
@@ -286,7 +286,7 @@
     rateLimited: 0
   };
 
-  // Cached values (memoization)
+  // Cached values
   const cache = {
     openDate: null,
     openDateTs: 0,
@@ -311,7 +311,6 @@
     cache[key + '_ts'] = now();
   }
 
-  // Memoized computed values
   function getOpenDate() {
     if (isCacheValid('openDate')) return cache.openDate;
     const d = new Date(CONFIG.openAtMs + serverClockOffset);
@@ -340,17 +339,6 @@
     return url;
   }
 
-  // Connection pool limiter for bounded concurrency
-  async function withConcurrencyLimit(asyncFn, index, total) {
-    const batchSize = CONFIG.maxConcurrency;
-    const batchIndex = Math.floor(index / batchSize) * batchSize;
-    if (index === batchIndex && batchIndex > 0) {
-      await delay(10); // Small delay between batches
-    }
-    return asyncFn();
-  }
-
-  // Fetch wrapper with error handling
   async function fetchWithRetry(url, options, retries) {
     retries = retries || 1;
     try {
@@ -371,7 +359,6 @@
     }
   }
 
-  // Clock sync
   async function syncServerClock() {
     for (let i = 1; i <= CONFIG.serverClockRetries; i++) {
       try {
@@ -398,7 +385,6 @@
     return false;
   }
 
-  // Fetch zones
   async function fetchZones() {
     try {
       const response = await fetchWithRetry(getBaseUrl(), {
@@ -424,7 +410,6 @@
     }
   }
 
-  // Build session for a zone
   async function buildSession(zone) {
     try {
       const response1 = await fetchWithRetry(getBaseUrl(), {
@@ -472,7 +457,6 @@
     }
   }
 
-  // Refresh session pool
   async function refreshPool() {
     try {
       if (!availableZones) {
@@ -484,18 +468,32 @@
         console.log('[OK] Courts: ' + availableZones.map(z => z.Name).join(', '));
       }
 
-      const builds = [];
+      // Store functions, not promises - to control when builds start
+      const buildFns = [];
       for (let i = 0; i < availableZones.length; i++) {
         for (let j = 0; j < CONFIG.sessionsPerCourt; j++) {
-          builds.push(buildSession(availableZones[i]));
+          const zone = availableZones[i];
+          buildFns.push(() => buildSession(zone));
         }
       }
 
-      // Use bounded concurrency
+      // Process in batches with proper concurrency control
       const results = [];
-      for (let i = 0; i < builds.length; i++) {
-        const result = await withConcurrencyLimit(builds[i], i, builds.length);
-        if (result) results.push(result);
+      const batchSize = CONFIG.maxConcurrency;
+      
+      for (let i = 0; i < buildFns.length; i += batchSize) {
+        // Delay between batches to reduce rate limiting
+        if (i > 0) {
+          await delay(200);
+        }
+        
+        const batch = buildFns.slice(i, i + batchSize);
+        const batchPromises = batch.map(fn => fn());
+        const batchResults = await Promise.all(batchPromises);
+        
+        for (const result of batchResults) {
+          if (result) results.push(result);
+        }
       }
 
       sessionPool = results;
@@ -506,7 +504,6 @@
     }
   }
 
-  // Try booking step 3
   async function tryStep3(session) {
     if (booked) return false;
 
@@ -571,7 +568,6 @@
     }
   }
 
-  // Pool salvo with bounded concurrency
   async function poolSalvo() {
     if (booked) return false;
 
@@ -586,20 +582,18 @@
     for (let i = 0; i < requests.length; i += CONFIG.maxConcurrency) {
       if (booked) return true;
       const batch = requests.slice(i, i + CONFIG.maxConcurrency);
-      const results = await Promise.all(batch.map(fn => fn()));
+      const results = await Promise.all(batch.map(fn => fn()))
       if (results.some(r => r)) return true;
     }
 
     return false;
   }
 
-  // Check if pool needs rebuild
   function shouldRebuild() {
     if (originalPoolCount === 0) return false;
     return sessionPool.length < originalPoolCount * CONFIG.poolLowThreshold;
   }
 
-  // Release wake lock
   function releaseWakeLock() {
     if (wakeLock) {
       wakeLock.release().catch(() => {});
@@ -607,7 +601,6 @@
     }
   }
 
-  // Fire blitz
   async function fireBlitz() {
     clearInterval(keepaliveTimer);
     keepaliveTimer = null;
@@ -616,7 +609,6 @@
 
     const deadline = CONFIG.openAtMs + serverClockOffset + CONFIG.retryDurationMs;
 
-    // Pool refresh interval
     fireInterval = setInterval(() => {
       if (booked) { clearInterval(fireInterval); return; }
       if (!shouldRebuild()) {
@@ -631,7 +623,6 @@
       }
     }, CONFIG.keepaliveMs);
 
-    // Fire waves
     function fireWave() {
       if (booked || now() > deadline) {
         clearInterval(fireInterval);
@@ -650,7 +641,6 @@
 
     fireWave();
 
-    // Wait until done
     await new Promise(resolve => {
       const check = setInterval(() => {
         if (booked || now() > deadline) {
@@ -669,7 +659,6 @@
     }
   }
 
-  // Pre-warm connections
   async function prewarm() {
     console.log('[OK] Pre-warming...');
     for (let i = 0; i < CONFIG.warmupRequests; i++) {
@@ -685,7 +674,6 @@
     }
   }
 
-  // Measure latency
   async function measureLatency() {
     const times = [];
     for (let i = 0; i < 3; i++) {
@@ -705,18 +693,16 @@
     if (times.length > 0) {
       measuredLatency = times.reduce((sum, t) => sum + t, 0) / times.length;
     } else {
-      measuredLatency = 200; // Default
+      measuredLatency = 200;
     }
 
     console.log('[OK] Measured latency: ' + Math.round(measuredLatency) + 'ms');
   }
 
-  // Countdown
   function countdown() {
     const ms = (CONFIG.openAtMs + serverClockOffset) - now();
     const fireWindow = Math.max(measuredLatency * 3, 2000);
 
-    // Pre-rebuild sessions close to fire time
     if (ms <= (fireWindow + 1500) && !preRebuilt) {
       preRebuilt = true;
       console.log('[OK] Pre-rebuilding fresh sessions...');
@@ -731,7 +717,6 @@
       })();
     }
 
-    // Fire when in window
     if (ms <= fireWindow) {
       console.log('[FIRING] Early window: ' + Math.round(fireWindow) + 'ms');
       clearInterval(countdownTimer);
@@ -739,7 +724,6 @@
       return;
     }
 
-    // Display countdown
     const h = Math.floor(ms / 3600000);
     const m = Math.floor((ms % 3600000) / 60000);
     const s = Math.floor((ms % 60000) / 1000);
@@ -748,13 +732,11 @@
     if (ms < 60000) console.log(msg);
     else if (ms < 300000) console.info(msg);
 
-    // Adjust interval based on time remaining
     const interval = ms > 300000 ? 30000 : (ms > 60000 ? 10000 : (ms > 10000 ? 1000 : 100));
     clearInterval(countdownTimer);
     countdownTimer = setTimeout(countdown, interval);
   }
 
-  // Cleanup all timers
   function cleanup() {
     clearInterval(keepaliveTimer);
     clearInterval(countdownTimer);
@@ -762,10 +744,9 @@
     releaseWakeLock();
   }
 
-  // Main
   async function main() {
     console.log('==============================');
-    console.log('[OK] KALLANG BOOKER v8 OPTIMIZED');
+    console.log('[OK] KALLANG BOOKER v8.1 FIXED');
     console.log('[OK] ' + CONFIG.slotDate + ' ' + CONFIG.startTime.slice(11, 16) + ' | User ' + CONFIG.userId + ' | Rule ' + CONFIG.ruleId + ' | ' + CONFIG.duration + 'min');
     console.log('[OK] Syncing clock...');
 
@@ -795,7 +776,6 @@
       return;
     }
 
-    // Acquire wake lock
     if ('wakeLock' in navigator) {
       try {
         wakeLock = await navigator.wakeLock.request('screen');
@@ -829,7 +809,6 @@
       console.log('[OK] Armed! Opens in ' + hours + 'h ' + mins + 'm');
       console.log('[OK] Pool: ' + sessionPool.length + ' sessions | Refresh: ' + (CONFIG.keepaliveMs / 1000) + 's');
 
-      // Keepalive timer
       keepaliveTimer = setInterval(() => {
         if (booked || (openTime - now() < 5000)) {
           clearInterval(keepaliveTimer);
@@ -851,13 +830,11 @@
     }
   }
 
-  // Error handler
   window.addEventListener('error', (err) => {
     console.error('[ERR] Unhandled error:', err.message);
     cleanup();
   });
 
-  // Start
   main().catch(err => {
     console.error('[ERR] Main error:', err);
     cleanup();
@@ -901,14 +878,12 @@
       el('run-screen').classList.remove('show');
     }
 
-    // Event listeners
     el('generate-btn').addEventListener('click', generate);
     el('copy-btn').addEventListener('click', copyScript);
     document.querySelector('#run-screen .btn-secondary').addEventListener('click', reset);
     el('date').addEventListener('input', updateOpens);
     el('time').addEventListener('input', updateOpens);
 
-    // Init
     window.addEventListener('DOMContentLoaded', () => {
       ['date', 'time', 'userId', 'ruleId', 'duration', 'token'].forEach(id => {
         const v = localStorage.getItem('kb_' + id);
