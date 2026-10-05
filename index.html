@@ -253,12 +253,12 @@
     retryDurationMs: 600 * 1000,
     parallelShots: 2,
     waveIntervalMs: 20,
-    keepaliveMs: 5000,
-    sessionsPerCourt: 5,
+    keepaliveMs: 10000,
+    sessionsPerCourt: 3,
     serverClockRetries: 5,
     prefireMs: 15000,
     poolLowThreshold: 0.15,
-    maxConcurrency: 3,
+    maxConcurrency: 2,
     warmupRequests: 2,
     buildDelay: 100
   };
@@ -477,14 +477,14 @@
         }
       }
 
-      // Process in batches with proper concurrency control
+      // Process in batches with stricter concurrency control
       const results = [];
       const batchSize = CONFIG.maxConcurrency;
       
       for (let i = 0; i < buildFns.length; i += batchSize) {
-        // Delay between batches to reduce rate limiting
+        // Longer delay between batches to reduce rate limiting
         if (i > 0) {
-          await delay(200);
+          await delay(500);
         }
         
         const batch = buildFns.slice(i, i + batchSize);
