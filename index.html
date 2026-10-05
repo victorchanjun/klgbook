@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -94,7 +94,7 @@
 <body>
 
   <div class="header">
-    <div class="header-icon">ðŸ¸</div>
+    <div class="header-icon">🏸</div>
     <div>
       <div class="header-title">Kallang Booker</div>
       <div class="header-sub">Nuclear auto-booker</div>
@@ -145,7 +145,7 @@
     <div class="card">
       <div class="card-label">Bearer Token</div>
       <div class="field">
-        <label>JWT â€” no "Bearer " prefix</label>
+        <label>JWT — no "Bearer " prefix</label>
         <textarea id="token" placeholder="eyJhbGci..." autocomplete="off" autocorrect="off" spellcheck="false"></textarea>
       </div>
     </div>
@@ -163,8 +163,8 @@
       <button class="btn-primary" id="copy-btn">Copy Script</button>
       <a id="open-btn" class="btn-primary" style="margin-top:8px;background:var(--green-dk)"
          href="https://thekallang.perfectgym.com/clientportal2/#/FacilityBooking"
-         target="_blank" rel="noopener">Open Kallang â†’</a>
-      <button class="btn-secondary">â† Back</button>
+         target="_blank" rel="noopener">Open Kallang →</a>
+      <button class="btn-secondary">← Back</button>
     </div>
     <p style="font-size:11px;color:var(--muted);text-align:center;margin-top:4px;">
       Paste into the browser console on the Kallang tab. Keep the tab open.
@@ -176,21 +176,20 @@
     'use strict';
     let generatedScript = '';
 
+    function el(id) { return document.getElementById(id); }
+
     function setDateMin() {
       const today = new Date();
-      const y = today.getFullYear();
-      const m = String(today.getMonth()+1).padStart(2,'0');
-      const d = String(today.getDate()).padStart(2,'0');
-      document.getElementById('date').min = y + '-' + m + '-' + d;
+      el('date').min = today.toISOString().slice(0, 10);
     }
 
     function updateOpens() {
-      const date = document.getElementById('date').value;
-      const time = document.getElementById('time').value;
-      const el   = document.getElementById('opens-text');
-      if (!date || !time) { el.textContent = 'Select date and time'; return; }
+      const date = el('date').value;
+      const time = el('time').value;
+      const opensText = el('opens-text');
+      if (!date || !time) { opensText.textContent = 'Select date and time'; return; }
       const openMs = new Date(date + 'T' + time + ':00').getTime() - 168 * 3600000;
-      el.textContent = 'Opens: ' + new Date(openMs).toLocaleString('en-SG', {
+      opensText.textContent = 'Opens: ' + new Date(openMs).toLocaleString('en-SG', {
         weekday: 'short', month: 'short', day: 'numeric',
         hour: '2-digit', minute: '2-digit', second: '2-digit'
       });
@@ -198,303 +197,37 @@
 
     function generate() {
       try {
-        const date     = document.getElementById('date').value;
-        const time     = document.getElementById('time').value;
-        const userId   = document.getElementById('userId').value;
-        const ruleId   = document.getElementById('ruleId').value;
-        const duration = document.getElementById('duration').value;
-        const token    = document.getElementById('token').value.replace(/\r\n|\r|\n|\t/g,'').trim();
+        const date = el('date').value;
+        const time = el('time').value;
+        const userId = el('userId').value;
+        const ruleId = el('ruleId').value;
+        const duration = el('duration').value;
+        const token = el('token').value.replace(/\s+/g, '').trim();
 
         if (!date || !time || !token) { alert('Fill in date, time, and token'); return; }
         if (token.length < 20) { alert('Token looks too short. Check your JWT.'); return; }
 
-        ['date','time','userId','ruleId','duration','token'].forEach(function(id) {
-          localStorage.setItem('kb_' + id, document.getElementById(id).value);
+        ['date', 'time', 'userId', 'ruleId', 'duration', 'token'].forEach(id => {
+          localStorage.setItem('kb_' + id, el(id).value);
         });
 
-        var startTime = date + 'T' + time + ':00';
-        var openMs    = new Date(startTime).getTime() - 168 * 3600000;
-        var tokenSafe = token.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+        const startTime = date + 'T' + time + ':00';
+        const openMs = new Date(startTime).getTime() - 168 * 3600000;
 
-        generatedScript =
-"(async function() {\n" +
-"  'use strict';\n" +
-"  var OPEN_AT_MS = " + openMs + ";\n" +
-"  var START_TIME = '" + startTime + "';\n" +
-"  var SLOT_DATE = '" + date + "';\n" +
-"  var USER_ID = " + userId + ";\n" +
-"  var RULE_ID = " + ruleId + ";\n" +
-"  var DURATION = " + duration + ";\n" +
-"  var TOKEN = '" + tokenSafe + "';\n" +
-"  var BASE = 'https://thekallang.perfectgym.com/clientportal2';\n" +
-"  var CLUB_ID = 1;\n" +
-"  var ZONE_TYPE = 31;\n" +
-"  var RETRY_DURATION_MS = 600 * 1000;\n" +
-"  var PARALLEL_SHOTS = 2;\n" +
-"  var WAVE_INTERVAL_MS = 20;\n" +
-"  var KEEPALIVE_MS = 5000;\n" +
-"  var SESSIONS_PER_COURT = 5;\n" +
-"  var SERVER_CLOCK_RETRIES = 5;\n" +
-"  var PREFIRE_MS = 15000;\n" +
-"  var POOL_LOW_THRESHOLD = 0.15;\n" +
-"  var sessionPool = [], booked = false, keepaliveTimer = null, wakeLock = null;\n" +
-"  var serverClockOffset = 0, clockSynced = false;\n" +
-"  var waveCount = 0, totalSent = 0, totalOk = 0, totalFail = 0, rateLimited = 0;\n" +
-"  var measuredLatency = 0;\n" +
-"  var originalPoolCount = 0;\n" +
-"  var availableZones = null;\n" +
-"  var preRebuilt = false;\n" +
-"\n" +
-"  function pad(n) { return String(Math.floor(n)).padStart(2,'0'); }\n" +
-"\n" +
-"  function getOpenDate() {\n" +
-"    var d = new Date(OPEN_AT_MS + serverClockOffset);\n" +
-"    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');\n" +
-"  }\n" +
-"\n" +
-"  function authHeaders() {\n" +
-"    return {'Accept':'application/json, text/plain, */*','Authorization':'Bearer '+TOKEN,'X-Requested-With':'XMLHttpRequest','CP-LANG':'en','CP-MODE':'desktop'};\n" +
-"  }\n" +
-"\n" +
-"  async function syncServerClock() {\n" +
-"    for (var i = 1; i <= SERVER_CLOCK_RETRIES; i++) {\n" +
-"      try {\n" +
-"        var t0 = Date.now();\n" +
-"        var r = await fetch(BASE+'/FacilityBookings/BuyProductBeforeBookingFacility/Start?clubId='+CLUB_ID+'&zoneTypeId='+ZONE_TYPE+'&date='+getOpenDate()+'&startDate='+START_TIME,{credentials:'include',headers:authHeaders(),mode:'cors'});\n" +
-"        var t1 = Date.now();\n" +
-"        var sd = r.headers.get('date')||r.headers.get('Date');\n" +
-"        if (sd) { serverClockOffset = new Date(sd).getTime()-(t0+(t1-t0)/2); clockSynced=true; console.log('[OK] Clock synced. Offset: '+serverClockOffset+'ms'); return true; }\n" +
-"      } catch(e) { console.warn('Clock sync attempt '+i+' failed'); }\n" +
-"      await new Promise(function(r){setTimeout(r,300)});\n" +
-"    }\n" +
-"    console.warn('[WARN] Could not sync clock'); return false;\n" +
-"  }\n" +
-"\n" +
-"  async function fetchZones() {\n" +
-"    var r = await fetch(BASE+'/FacilityBookings/BuyProductBeforeBookingFacility/Start?clubId='+CLUB_ID+'&zoneTypeId='+ZONE_TYPE+'&date='+getOpenDate()+'&startDate='+START_TIME,{credentials:'include',headers:authHeaders()});\n" +
-"    if (!r.ok) return null;\n" +
-"    var d = await r.json();\n" +
-"    var z = (d.Data&&d.Data.Zones)?d.Data.Zones:[];\n" +
-"    if (!z.length) return null;\n" +
-"    z.sort(function(a,b){return (parseInt((b.Name.match(/\\\\d+$/)||['0'])[0])||0)-(parseInt((a.Name.match(/\\\\d+$/)||['0'])[0])||0);});\n" +
-"    return z;\n" +
-"  }\n" +
-"\n" +
-"  async function buildSession(zone) {\n" +
-"    try {\n" +
-"      var r1 = await fetch(BASE+'/FacilityBookings/BuyProductBeforeBookingFacility/Start?clubId='+CLUB_ID+'&zoneTypeId='+ZONE_TYPE+'&date='+getOpenDate()+'&startDate='+START_TIME,{credentials:'include',headers:authHeaders()});\n" +
-"      if (!r1.ok) return null;\n" +
-"      var sid = r1.headers.get('cp-buy-product-before-booking-fb-session-id');\n" +
-"      if (!sid) return null;\n" +
-"      var h = {'Content-Type':'application/json;charset=utf-8','Accept':'application/json, text/plain, */*','Authorization':'Bearer '+TOKEN,'X-Hash':'#/FacilityBooking?clubId='+CLUB_ID+'&zoneTypeId='+ZONE_TYPE+'&date='+SLOT_DATE,'BAF-WIZARD-CURRENTURL':BASE+'/#/FacilityBooking?clubId='+CLUB_ID+'&zoneTypeId='+ZONE_TYPE+'&date='+SLOT_DATE+'&sessionId='+sid,'CP-BUY-PRODUCT-BEFORE-BOOKING-FB-SESSION-ID':sid,'X-Requested-With':'XMLHttpRequest','CP-LANG':'en','CP-MODE':'desktop'};\n" +
-"      var r2 = await fetch(BASE+'/FacilityBookings/WizardSteps/SetFacilityBookingDetailsWizardStep/Next',{method:'POST',credentials:'include',headers:h,body:JSON.stringify({UserId:USER_ID,ZoneId:zone.Id,StartTime:START_TIME,RequiredNumberOfSlots:null,Duration:DURATION})});\n" +
-"      if (!r2.ok) return null;\n" +
-"      return {sessionId:sid,zoneId:zone.Id,zone:zone};\n" +
-"    } catch(_) { return null; }\n" +
-"  }\n" +
-"\n" +
-"  async function refreshPool() {\n" +
-"    if (!availableZones) {\n" +
-"      availableZones = await fetchZones();\n" +
-"      if (!availableZones) { console.log('[ERR] No zones'); return; }\n" +
-"      console.log('[OK] Courts: '+availableZones.map(function(z){return z.Name}).join(', '));\n" +
-"    }\n" +
-"    var builds = [];\n" +
-"    for (var i = 0; i < availableZones.length; i++) {\n" +
-"      for (var j = 0; j < SESSIONS_PER_COURT; j++) {\n" +
-"        builds.push(buildSession(availableZones[i]));\n" +
-"      }\n" +
-"    }\n" +
-"    var res = await Promise.all(builds);\n" +
-"    sessionPool = res.filter(function(x){return x});\n" +
-"    originalPoolCount = sessionPool.length;\n" +
-"    console.log('[OK] Pool: '+sessionPool.length+'/'+(availableZones.length*SESSIONS_PER_COURT)+' sessions');\n" +
-"  }\n" +
-"\n" +
-"  async function tryStep3(sess) {\n" +
-"    if (booked) return false;\n" +
-"    var h = {'Content-Type':'application/json;charset=utf-8','Accept':'application/json, text/plain, */*','Authorization':'Bearer '+TOKEN,'X-Hash':'#/FacilityBooking?clubId='+CLUB_ID+'&zoneTypeId='+ZONE_TYPE+'&date='+SLOT_DATE,'BAF-WIZARD-CURRENTURL':BASE+'/#/FacilityBooking?clubId='+CLUB_ID+'&zoneTypeId='+ZONE_TYPE+'&date='+SLOT_DATE+'&sessionId='+sess.sessionId,'CP-BUY-PRODUCT-BEFORE-BOOKING-FB-SESSION-ID':sess.sessionId,'X-Requested-With':'XMLHttpRequest','CP-LANG':'en','CP-MODE':'desktop'};\n" +
-"    try {\n" +
-"      var res = await fetch(BASE+'/FacilityBookings/WizardSteps/ChooseBookingRuleStep/Next',{method:'POST',credentials:'include',headers:h,body:JSON.stringify({ruleId:RULE_ID,OtherCalendarEventBookedAtRequestedTime:false,HasUserRequiredProducts:false})});\n" +
-"      totalSent++;\n" +
-"      if (res.status === 429) { rateLimited++; return false; }\n" +
-"      if (!res.ok) { totalFail++; return false; }\n" +
-"      var d = await res.json();\n" +
-"      if (d.Redirect||(d.Data&&d.Data.Booked)) {\n" +
-"        totalOk++; booked = true;\n" +
-"        console.log('[BOOKED!] Court: '+(sess.zone?sess.zone.Name:''));\n" +
-"        console.log('Stats: '+totalSent+' sent, '+totalOk+' ok, '+totalFail+' fail, '+rateLimited+' rate-limited');\n" +
-"        releaseWakeLock();\n" +
-"        if (d.Redirect) {\n" +
-"          console.log('Payment: '+d.Redirect);\n" +
-"          window.location.href = d.Redirect;\n" +
-"        }\n" +
-"        return true;\n" +
-"      }\n" +
-"      return false;\n" +
-"    } catch(_) { totalFail++; return false; }\n" +
-"  }\n" +
-"\n" +
-"  function poolSalvo() {\n" +
-"    if (booked) return Promise.resolve(false);\n" +
-"    var requests = [];\n" +
-"    for (var i = 0; i < sessionPool.length; i++) {\n" +
-"      for (var j = 0; j < PARALLEL_SHOTS; j++) {\n" +
-"        requests.push(tryStep3(sessionPool[i]));\n" +
-"      }\n" +
-"    }\n" +
-"    return Promise.all(requests).then(function(r){return r.some(function(x){return x});});\n" +
-"  }\n" +
-"\n" +
-"  function shouldRebuild() {\n" +
-"    if (originalPoolCount === 0) return false;\n" +
-"    return sessionPool.length < originalPoolCount * POOL_LOW_THRESHOLD;\n" +
-"  }\n" +
-"\n" +
-"  function releaseWakeLock() {\n" +
-"    if (wakeLock) { wakeLock.release().catch(function(){}); wakeLock = null; }\n" +
-"  }\n" +
-"\n" +
-"  async function fireBlitz() {\n" +
-"    if (keepaliveTimer) { clearInterval(keepaliveTimer); keepaliveTimer = null; }\n" +
-"    console.log('[FIRING] '+sessionPool.length+' sessions x '+PARALLEL_SHOTS+' = '+(sessionPool.length*PARALLEL_SHOTS)+' per wave');\n" +
-"    var deadline = OPEN_AT_MS + serverClockOffset + RETRY_DURATION_MS;\n" +
-"    var frt = setInterval(function() {\n" +
-"      if (booked) { clearInterval(frt); return; }\n" +
-"      if (!shouldRebuild()) {\n" +
-"        (async function() { try { availableZones = null; await refreshPool(); } catch(e) {} })();\n" +
-"      }\n" +
-"    }, KEEPALIVE_MS);\n" +
-"    function fireWave() {\n" +
-"      if (booked || Date.now() > deadline) { clearInterval(frt); return; }\n" +
-"      waveCount++;\n" +
-"      if (rateLimited > 5 && waveCount % 5 === 0) {\n" +
-"        console.warn('[RATE] '+rateLimited+' rate-limited responses detected');\n" +
-"      }\n" +
-"      console.log('[WAVE] #' + waveCount + (shouldRebuild() ? ' (pool low)' : ''));\n" +
-"      poolSalvo().catch(function(){});\n" +
-"      setTimeout(fireWave, WAVE_INTERVAL_MS);\n" +
-"    }\n" +
-"    fireWave();\n" +
-"    await new Promise(function(resolve) {\n" +
-"      var c = setInterval(function() {\n" +
-"        if (booked || Date.now() > deadline) { clearInterval(c); clearInterval(frt); resolve(); }\n" +
-"      }, 10);\n" +
-"    });\n" +
-"    releaseWakeLock();\n" +
-"    if (!booked) {\n" +
-"      console.error('[FAIL] No court after '+(RETRY_DURATION_MS/1000)+'s | Waves: '+waveCount+' | Sent: '+totalSent+' | OK: '+totalOk+' | Fail: '+totalFail+' | Rate-limited: '+rateLimited);\n" +
-"      if (totalFail > totalOk && totalFail > 0) console.warn('[WARN] High failure rate - check network, token, or rate limiting');\n" +
-"      if (rateLimited > totalFail) console.warn('[WARN] Heavy rate limiting - consider reducing PARALLEL_SHOTS or increasing WAVE_INTERVAL_MS');\n" +
-"    }\n" +
-"  }\n" +
-"\n" +
-"  async function prewarm() {\n" +
-"    console.log('[OK] Pre-warming...');\n" +
-"    for (var i = 0; i < 3; i++) {\n" +
-"      try { await fetch(BASE+'/FacilityBookings/BuyProductBeforeBookingFacility/Start?clubId='+CLUB_ID+'&zoneTypeId='+ZONE_TYPE+'&date='+getOpenDate()+'&startDate='+START_TIME,{credentials:'include',headers:authHeaders()}); } catch(e) {}\n" +
-"      await new Promise(function(r){setTimeout(r,100)});\n" +
-"    }\n" +
-"  }\n" +
-"\n" +
-"  async function measureLatency() {\n" +
-"    var start = performance.now();\n" +
-"    try { await fetch(BASE+'/FacilityBookings/BuyProductBeforeBookingFacility/Start?clubId='+CLUB_ID+'&zoneTypeId='+ZONE_TYPE+'&date='+getOpenDate()+'&startDate='+START_TIME,{credentials:'include',headers:authHeaders(),mode:'cors'}); } catch(e) {}\n" +
-"    var latency = performance.now() - start;\n" +
-"    var total = 0;\n" +
-"    for (var i = 0; i < 2; i++) {\n" +
-"      var s = performance.now();\n" +
-"      try { await fetch(BASE+'/FacilityBookings/BuyProductBeforeBookingFacility/Start?clubId='+CLUB_ID+'&zoneTypeId='+ZONE_TYPE+'&date='+getOpenDate()+'&startDate='+START_TIME,{credentials:'include',headers:authHeaders(),mode:'cors'}); } catch(e) {}\n" +
-"      total += performance.now() - s;\n" +
-"    }\n" +
-"    measuredLatency = (latency + total / 2);\n" +
-"    console.log('[OK] Measured latency: ' + Math.round(measuredLatency) + 'ms');\n" +
-"    return measuredLatency;\n" +
-"  }\n" +
-"\n" +
-"  function countdown() {\n" +
-"    var ms = (OPEN_AT_MS + serverClockOffset) - Date.now();\n" +
-"    var fireWindow = Math.max(measuredLatency * 3, 2000);\n" +
-"    if (ms <= (fireWindow + 1500) && !preRebuilt) {\n" +
-"      preRebuilt = true;\n" +
-"      console.log('[OK] Pre-rebuilding fresh sessions...');\n" +
-"      (async function() {\n" +
-"        try {\n" +
-"          availableZones = null;\n" +
-"          await refreshPool();\n" +
-"          console.log('[OK] Pre-rebuild complete: ' + sessionPool.length + ' sessions');\n" +
-"        } catch(e) { console.warn('[WARN] Pre-rebuild failed'); }\n" +
-"      })();\n" +
-"    }\n" +
-"    if (ms <= fireWindow) {\n" +
-"      console.log('[FIRING] Early window: '+Math.round(fireWindow)+'ms');\n" +
-"      fireBlitz();\n" +
-"      return;\n" +
-"    }\n" +
-"    var h = Math.floor(ms / 3600000);\n" +
-"    var m = Math.floor((ms % 3600000) / 60000);\n" +
-"    var s = Math.floor((ms % 60000) / 1000);\n" +
-"    var msg = '[TIMER] ' + pad(h) + 'h ' + pad(m) + 'm ' + pad(s) + 's' + (clockSynced ? ' (synced)' : '');\n" +
-"    if (ms < 60000) console.log(msg);\n" +
-"    else if (ms < 300000) console.info(msg);\n" +
-"    setTimeout(countdown, ms > 300000 ? 30000 : (ms > 60000 ? 10000 : (ms > 10000 ? 1000 : 100)));\n" +
-"  }\n" +
-"\n" +
-"  console.log('==============================');\n" +
-"  console.log('[OK] KALLANG BOOKER v7 NUCLEAR');\n" +
-"  console.log('[OK] '+SLOT_DATE+' '+START_TIME.slice(11,16)+' | User '+USER_ID+' | Rule '+RULE_ID+' | '+DURATION+'min');\n" +
-"  console.log('[OK] Syncing clock...');\n" +
-"  await syncServerClock();\n" +
-"  console.log('[OK] Measuring server latency...');\n" +
-"  await measureLatency();\n" +
-"  await prewarm();\n" +
-"  console.log('[OK] Building pool ('+SESSIONS_PER_COURT+' per court)...');\n" +
-"  var ok = false;\n" +
-"  for (var i = 1; i <= 3; i++) {\n" +
-"    await refreshPool();\n" +
-"    if (sessionPool.length) { ok = true; break; }\n" +
-"    console.warn('[WARN] Attempt '+i+' failed, retry in 2s...');\n" +
-"    await new Promise(function(r){setTimeout(r,2000)});\n" +
-"  }\n" +
-"  if (!ok) { console.error('[ERR] Setup failed'); return; }\n" +
-"  (async function() {\n" +
-"    if (!('wakeLock' in navigator)) return;\n" +
-"    try {\n" +
-"      wakeLock = await navigator.wakeLock.request('screen');\n" +
-"      console.log('[OK] Wake lock acquired');\n" +
-"      wakeLock.addEventListener('release', function() {\n" +
-"        if (!booked) {\n" +
-"          (async function(){\n" +
-"            if (!('wakeLock' in navigator)) return;\n" +
-"            try { wakeLock = await navigator.wakeLock.request('screen'); } catch(e) {}\n" +
-"          })();\n" +
-"        }\n" +
-"      });\n" +
-"    } catch(e) { console.warn('[WARN] Wake lock failed'); }\n" +
-"  })();\n" +
-"  var eo = OPEN_AT_MS + serverClockOffset;\n" +
-"  var ml = eo - Date.now();\n" +
-"  if (ml <= PREFIRE_MS) {\n" +
-"    console.log('[FIRING] Window open - NOW!');\n" +
-"    await fireBlitz();\n" +
-"  } else {\n" +
-"    var h2 = Math.floor(ml / 3600000);\n" +
-"    var m2 = Math.floor((ml % 3600000) / 60000);\n" +
-"    console.log('[OK] Armed! Opens in ' + h2 + 'h ' + m2 + 'm');\n" +
-"    console.log('[OK] Pool: '+sessionPool.length+' sessions | Refresh: '+(KEEPALIVE_MS/1000)+'s');\n" +
-"    keepaliveTimer = setInterval(function() {\n" +
-"      if (booked || (eo - Date.now() < 5000)) { clearInterval(keepaliveTimer); return; }\n" +
-"      if (!shouldRebuild()) {\n" +
-"        (async function() { try { availableZones = null; await refreshPool(); } catch(e) {} })();\n" +
-"      }\n" +
-"    }, KEEPALIVE_MS);\n" +
-"    countdown();\n" +
-"  }\n" +
-"})();\n";
+        // Generate script using template for clarity and correctness
+        generatedScript = generateScript({
+          openMs,
+          startTime,
+          date,
+          userId,
+          ruleId,
+          duration,
+          token
+        });
 
-        document.getElementById('script-preview').textContent = generatedScript.slice(0, 300) + '...';
-        document.getElementById('setup-screen').classList.add('hidden');
-        document.getElementById('run-screen').classList.add('show');
+        el('script-preview').textContent = generatedScript.slice(0, 300) + '...';
+        el('setup-screen').classList.add('hidden');
+        el('run-screen').classList.add('show');
         copyScript();
       } catch (err) {
         console.error('Generate error:', err);
@@ -502,50 +235,684 @@
       }
     }
 
+    function generateScript(cfg) {
+      return `(async function() {
+  'use strict';
+
+  // Configuration
+  const CONFIG = {
+    openAtMs: ${cfg.openMs},
+    startTime: '${cfg.startTime}',
+    slotDate: '${cfg.date}',
+    userId: ${cfg.userId},
+    ruleId: ${cfg.ruleId},
+    duration: ${cfg.duration},
+    token: '${cfg.token}',
+    base: 'https://thekallang.perfectgym.com/clientportal2',
+    clubId: 1,
+    zoneType: 31,
+    retryDurationMs: 600 * 1000,
+    parallelShots: 2,
+    waveIntervalMs: 20,
+    keepaliveMs: 5000,
+    sessionsPerCourt: 5,
+    serverClockRetries: 5,
+    prefireMs: 15000,
+    poolLowThreshold: 0.15,
+    maxConcurrency: 6,
+    warmupRequests: 3
+  };
+
+  // State
+  let sessionPool = [];
+  let booked = false;
+  let wakeLock = null;
+  let serverClockOffset = 0;
+  let clockSynced = false;
+  let measuredLatency = 0;
+  let originalPoolCount = 0;
+  let availableZones = null;
+  let preRebuilt = false;
+  let keepaliveTimer = null;
+  let countdownTimer = null;
+  let fireInterval = null;
+
+  // Stats
+  const stats = {
+    waveCount: 0,
+    totalSent: 0,
+    totalOk: 0,
+    totalFail: 0,
+    rateLimited: 0
+  };
+
+  // Cached values (memoization)
+  const cache = {
+    openDate: null,
+    openDateTs: 0,
+    authHeaders: null,
+    baseUrl: null
+  };
+  const CACHE_TTL = 5000;
+
+  // Helpers
+  function pad(n) { return String(Math.floor(n)).padStart(2, '0'); }
+
+  function now() { return Date.now(); }
+
+  function delay(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+
+  function isCacheValid(key) {
+    return cache[key + '_ts'] && (now() - cache[key + '_ts']) < CACHE_TTL;
+  }
+
+  function setCache(key, value) {
+    cache[key] = value;
+    cache[key + '_ts'] = now();
+  }
+
+  // Memoized computed values
+  function getOpenDate() {
+    if (isCacheValid('openDate')) return cache.openDate;
+    const d = new Date(CONFIG.openAtMs + serverClockOffset);
+    const date = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    setCache('openDate', date);
+    return date;
+  }
+
+  function getAuthHeaders() {
+    if (isCacheValid('authHeaders')) return cache.authHeaders;
+    const headers = {
+      'Accept': 'application/json, text/plain, */*',
+      'Authorization': 'Bearer ' + CONFIG.token,
+      'X-Requested-With': 'XMLHttpRequest',
+      'CP-LANG': 'en',
+      'CP-MODE': 'desktop'
+    };
+    setCache('authHeaders', headers);
+    return headers;
+  }
+
+  function getBaseUrl() {
+    if (isCacheValid('baseUrl')) return cache.baseUrl;
+    const url = CONFIG.base + '/FacilityBookings/BuyProductBeforeBookingFacility/Start?clubId=' + CONFIG.clubId + '&zoneTypeId=' + CONFIG.zoneType + '&date=' + getOpenDate() + '&startDate=' + CONFIG.startTime;
+    setCache('baseUrl', url);
+    return url;
+  }
+
+  // Connection pool limiter for bounded concurrency
+  async function withConcurrencyLimit(asyncFn, index, total) {
+    const batchSize = CONFIG.maxConcurrency;
+    const batchIndex = Math.floor(index / batchSize) * batchSize;
+    if (index === batchIndex && batchIndex > 0) {
+      await delay(10); // Small delay between batches
+    }
+    return asyncFn();
+  }
+
+  // Fetch wrapper with error handling
+  async function fetchWithRetry(url, options, retries) {
+    retries = retries || 1;
+    try {
+      const response = await fetch(url, options);
+      if (response.status === 429) {
+        stats.rateLimited++;
+        await delay(1000);
+        if (retries > 0) return fetchWithRetry(url, options, retries - 1);
+        return response;
+      }
+      return response;
+    } catch (err) {
+      if (retries > 0) {
+        await delay(500);
+        return fetchWithRetry(url, options, retries - 1);
+      }
+      throw err;
+    }
+  }
+
+  // Clock sync
+  async function syncServerClock() {
+    for (let i = 1; i <= CONFIG.serverClockRetries; i++) {
+      try {
+        const t0 = now();
+        const response = await fetchWithRetry(getBaseUrl(), {
+          credentials: 'include',
+          headers: getAuthHeaders(),
+          mode: 'cors'
+        });
+        const t1 = now();
+        const dateHeader = response.headers.get('date') || response.headers.get('Date');
+        if (dateHeader) {
+          serverClockOffset = new Date(dateHeader).getTime() - (t0 + (t1 - t0) / 2);
+          clockSynced = true;
+          console.log('[OK] Clock synced. Offset: ' + serverClockOffset + 'ms');
+          return true;
+        }
+      } catch (err) {
+        console.warn('Clock sync attempt ' + i + ' failed: ' + err.message);
+      }
+      await delay(300);
+    }
+    console.warn('[WARN] Could not sync clock');
+    return false;
+  }
+
+  // Fetch zones
+  async function fetchZones() {
+    try {
+      const response = await fetchWithRetry(getBaseUrl(), {
+        credentials: 'include',
+        headers: getAuthHeaders()
+      });
+      if (!response.ok) {
+        console.warn('Fetch zones failed: ' + response.status);
+        return null;
+      }
+      const data = await response.json();
+      const zones = (data.Data && data.Data.Zones) ? data.Data.Zones : [];
+      if (!zones.length) return null;
+      zones.sort((a, b) => {
+        const numA = parseInt((a.Name.match(/\\d+$/) || ['0'])[0]) || 0;
+        const numB = parseInt((b.Name.match(/\\d+$/) || ['0'])[0]) || 0;
+        return numB - numA;
+      });
+      return zones;
+    } catch (err) {
+      console.error('Error fetching zones:', err);
+      return null;
+    }
+  }
+
+  // Build session for a zone
+  async function buildSession(zone) {
+    try {
+      const response1 = await fetchWithRetry(getBaseUrl(), {
+        credentials: 'include',
+        headers: getAuthHeaders()
+      });
+      if (!response1.ok) return null;
+
+      const sessionId = response1.headers.get('cp-buy-product-before-booking-fb-session-id');
+      if (!sessionId) return null;
+
+      const headers = {
+        'Content-Type': 'application/json;charset=utf-8',
+        'Accept': 'application/json, text/plain, */*',
+        'Authorization': 'Bearer ' + CONFIG.token,
+        'X-Hash': '#/FacilityBooking?clubId=' + CONFIG.clubId + '&zoneTypeId=' + CONFIG.zoneType + '&date=' + CONFIG.slotDate,
+        'BAF-WIZARD-CURRENTURL': CONFIG.base + '/#/FacilityBooking?clubId=' + CONFIG.clubId + '&zoneTypeId=' + CONFIG.zoneType + '&date=' + CONFIG.slotDate + '&sessionId=' + sessionId,
+        'CP-BUY-PRODUCT-BEFORE-BOOKING-FB-SESSION-ID': sessionId,
+        'X-Requested-With': 'XMLHttpRequest',
+        'CP-LANG': 'en',
+        'CP-MODE': 'desktop'
+      };
+
+      const body = JSON.stringify({
+        UserId: CONFIG.userId,
+        ZoneId: zone.Id,
+        StartTime: CONFIG.startTime,
+        RequiredNumberOfSlots: null,
+        Duration: CONFIG.duration
+      });
+
+      const response2 = await fetchWithRetry(CONFIG.base + '/FacilityBookings/WizardSteps/SetFacilityBookingDetailsWizardStep/Next', {
+        method: 'POST',
+        credentials: 'include',
+        headers: headers,
+        body: body
+      });
+
+      if (!response2.ok) return null;
+
+      return { sessionId, zoneId: zone.Id, zone };
+    } catch (err) {
+      console.warn('Build session failed for zone ' + zone.Id + ':', err.message);
+      return null;
+    }
+  }
+
+  // Refresh session pool
+  async function refreshPool() {
+    try {
+      if (!availableZones) {
+        availableZones = await fetchZones();
+        if (!availableZones) {
+          console.log('[ERR] No zones available');
+          return;
+        }
+        console.log('[OK] Courts: ' + availableZones.map(z => z.Name).join(', '));
+      }
+
+      const builds = [];
+      for (let i = 0; i < availableZones.length; i++) {
+        for (let j = 0; j < CONFIG.sessionsPerCourt; j++) {
+          builds.push(buildSession(availableZones[i]));
+        }
+      }
+
+      // Use bounded concurrency
+      const results = [];
+      for (let i = 0; i < builds.length; i++) {
+        const result = await withConcurrencyLimit(builds[i], i, builds.length);
+        if (result) results.push(result);
+      }
+
+      sessionPool = results;
+      originalPoolCount = sessionPool.length;
+      console.log('[OK] Pool: ' + sessionPool.length + '/' + (availableZones.length * CONFIG.sessionsPerCourt) + ' sessions');
+    } catch (err) {
+      console.error('Error refreshing pool:', err);
+    }
+  }
+
+  // Try booking step 3
+  async function tryStep3(session) {
+    if (booked) return false;
+
+    const headers = {
+      'Content-Type': 'application/json;charset=utf-8',
+      'Accept': 'application/json, text/plain, */*',
+      'Authorization': 'Bearer ' + CONFIG.token,
+      'X-Hash': '#/FacilityBooking?clubId=' + CONFIG.clubId + '&zoneTypeId=' + CONFIG.zoneType + '&date=' + CONFIG.slotDate,
+      'BAF-WIZARD-CURRENTURL': CONFIG.base + '/#/FacilityBooking?clubId=' + CONFIG.clubId + '&zoneTypeId=' + CONFIG.zoneType + '&date=' + CONFIG.slotDate + '&sessionId=' + session.sessionId,
+      'CP-BUY-PRODUCT-BEFORE-BOOKING-FB-SESSION-ID': session.sessionId,
+      'X-Requested-With': 'XMLHttpRequest',
+      'CP-LANG': 'en',
+      'CP-MODE': 'desktop'
+    };
+
+    const body = JSON.stringify({
+      ruleId: CONFIG.ruleId,
+      OtherCalendarEventBookedAtRequestedTime: false,
+      HasUserRequiredProducts: false
+    });
+
+    try {
+      const response = await fetchWithRetry(CONFIG.base + '/FacilityBookings/WizardSteps/ChooseBookingRuleStep/Next', {
+        method: 'POST',
+        credentials: 'include',
+        headers: headers,
+        body: body
+      });
+
+      stats.totalSent++;
+
+      if (response.status === 429) {
+        stats.rateLimited++;
+        return false;
+      }
+
+      if (!response.ok) {
+        stats.totalFail++;
+        return false;
+      }
+
+      const data = await response.json();
+
+      if (data.Redirect || (data.Data && data.Data.Booked)) {
+        stats.totalOk++;
+        booked = true;
+        console.log('[BOOKED!] Court: ' + (session.zone ? session.zone.Name : ''));
+        console.log('Stats: ' + stats.totalSent + ' sent, ' + stats.totalOk + ' ok, ' + stats.totalFail + ' fail, ' + stats.rateLimited + ' rate-limited');
+        releaseWakeLock();
+        if (data.Redirect) {
+          console.log('Payment: ' + data.Redirect);
+          window.location.href = data.Redirect;
+        }
+        return true;
+      }
+
+      return false;
+    } catch (err) {
+      stats.totalFail++;
+      console.warn('Step 3 failed:', err.message);
+      return false;
+    }
+  }
+
+  // Pool salvo with bounded concurrency
+  async function poolSalvo() {
+    if (booked) return false;
+
+    const requests = [];
+    for (let i = 0; i < sessionPool.length; i++) {
+      for (let j = 0; j < CONFIG.parallelShots; j++) {
+        requests.push(() => tryStep3(sessionPool[i]));
+      }
+    }
+
+    // Process in batches
+    for (let i = 0; i < requests.length; i += CONFIG.maxConcurrency) {
+      if (booked) return true;
+      const batch = requests.slice(i, i + CONFIG.maxConcurrency);
+      const results = await Promise.all(batch.map(fn => fn()));
+      if (results.some(r => r)) return true;
+    }
+
+    return false;
+  }
+
+  // Check if pool needs rebuild
+  function shouldRebuild() {
+    if (originalPoolCount === 0) return false;
+    return sessionPool.length < originalPoolCount * CONFIG.poolLowThreshold;
+  }
+
+  // Release wake lock
+  function releaseWakeLock() {
+    if (wakeLock) {
+      wakeLock.release().catch(() => {});
+      wakeLock = null;
+    }
+  }
+
+  // Fire blitz
+  async function fireBlitz() {
+    clearInterval(keepaliveTimer);
+    keepaliveTimer = null;
+
+    console.log('[FIRING] ' + sessionPool.length + ' sessions x ' + CONFIG.parallelShots + ' = ' + (sessionPool.length * CONFIG.parallelShots) + ' per wave');
+
+    const deadline = CONFIG.openAtMs + serverClockOffset + CONFIG.retryDurationMs;
+
+    // Pool refresh interval
+    fireInterval = setInterval(() => {
+      if (booked) { clearInterval(fireInterval); return; }
+      if (!shouldRebuild()) {
+        (async () => {
+          try {
+            availableZones = null;
+            await refreshPool();
+          } catch (err) {
+            console.warn('Pool refresh failed:', err.message);
+          }
+        })();
+      }
+    }, CONFIG.keepaliveMs);
+
+    // Fire waves
+    function fireWave() {
+      if (booked || now() > deadline) {
+        clearInterval(fireInterval);
+        return;
+      }
+      stats.waveCount++;
+      if (stats.rateLimited > 5 && stats.waveCount % 5 === 0) {
+        console.warn('[RATE] ' + stats.rateLimited + ' rate-limited responses detected');
+      }
+      console.log('[WAVE] #' + stats.waveCount + (shouldRebuild() ? ' (pool low)' : ''));
+      poolSalvo().catch(err => {
+        console.warn('Wave error:', err.message);
+      });
+      setTimeout(fireWave, CONFIG.waveIntervalMs);
+    }
+
+    fireWave();
+
+    // Wait until done
+    await new Promise(resolve => {
+      const check = setInterval(() => {
+        if (booked || now() > deadline) {
+          clearInterval(check);
+          clearInterval(fireInterval);
+          releaseWakeLock();
+          resolve();
+        }
+      }, 10);
+    });
+
+    if (!booked) {
+      console.error('[FAIL] No court after ' + (CONFIG.retryDurationMs / 1000) + 's | Waves: ' + stats.waveCount + ' | Sent: ' + stats.totalSent + ' | OK: ' + stats.totalOk + ' | Fail: ' + stats.totalFail + ' | Rate-limited: ' + stats.rateLimited);
+      if (stats.totalFail > stats.totalOk && stats.totalFail > 0) console.warn('[WARN] High failure rate - check network, token, or rate limiting');
+      if (stats.rateLimited > stats.totalFail) console.warn('[WARN] Heavy rate limiting - consider reducing parallelShots or increasing waveIntervalMs');
+    }
+  }
+
+  // Pre-warm connections
+  async function prewarm() {
+    console.log('[OK] Pre-warming...');
+    for (let i = 0; i < CONFIG.warmupRequests; i++) {
+      try {
+        await fetchWithRetry(getBaseUrl(), {
+          credentials: 'include',
+          headers: getAuthHeaders()
+        });
+      } catch (err) {
+        // Ignore warmup errors
+      }
+      await delay(100);
+    }
+  }
+
+  // Measure latency
+  async function measureLatency() {
+    const times = [];
+    for (let i = 0; i < 3; i++) {
+      const start = performance.now();
+      try {
+        await fetchWithRetry(getBaseUrl(), {
+          credentials: 'include',
+          headers: getAuthHeaders(),
+          mode: 'cors'
+        });
+      } catch (err) {
+        continue;
+      }
+      times.push(performance.now() - start);
+    }
+
+    if (times.length > 0) {
+      measuredLatency = times.reduce((sum, t) => sum + t, 0) / times.length;
+    } else {
+      measuredLatency = 200; // Default
+    }
+
+    console.log('[OK] Measured latency: ' + Math.round(measuredLatency) + 'ms');
+  }
+
+  // Countdown
+  function countdown() {
+    const ms = (CONFIG.openAtMs + serverClockOffset) - now();
+    const fireWindow = Math.max(measuredLatency * 3, 2000);
+
+    // Pre-rebuild sessions close to fire time
+    if (ms <= (fireWindow + 1500) && !preRebuilt) {
+      preRebuilt = true;
+      console.log('[OK] Pre-rebuilding fresh sessions...');
+      (async () => {
+        try {
+          availableZones = null;
+          await refreshPool();
+          console.log('[OK] Pre-rebuild complete: ' + sessionPool.length + ' sessions');
+        } catch (err) {
+          console.warn('[WARN] Pre-rebuild failed:', err.message);
+        }
+      })();
+    }
+
+    // Fire when in window
+    if (ms <= fireWindow) {
+      console.log('[FIRING] Early window: ' + Math.round(fireWindow) + 'ms');
+      clearInterval(countdownTimer);
+      fireBlitz();
+      return;
+    }
+
+    // Display countdown
+    const h = Math.floor(ms / 3600000);
+    const m = Math.floor((ms % 3600000) / 60000);
+    const s = Math.floor((ms % 60000) / 1000);
+    const msg = '[TIMER] ' + pad(h) + 'h ' + pad(m) + 'm ' + pad(s) + 's' + (clockSynced ? ' (synced)' : '');
+
+    if (ms < 60000) console.log(msg);
+    else if (ms < 300000) console.info(msg);
+
+    // Adjust interval based on time remaining
+    const interval = ms > 300000 ? 30000 : (ms > 60000 ? 10000 : (ms > 10000 ? 1000 : 100));
+    clearInterval(countdownTimer);
+    countdownTimer = setTimeout(countdown, interval);
+  }
+
+  // Cleanup all timers
+  function cleanup() {
+    clearInterval(keepaliveTimer);
+    clearInterval(countdownTimer);
+    clearInterval(fireInterval);
+    releaseWakeLock();
+  }
+
+  // Main
+  async function main() {
+    console.log('==============================');
+    console.log('[OK] KALLANG BOOKER v8 OPTIMIZED');
+    console.log('[OK] ' + CONFIG.slotDate + ' ' + CONFIG.startTime.slice(11, 16) + ' | User ' + CONFIG.userId + ' | Rule ' + CONFIG.ruleId + ' | ' + CONFIG.duration + 'min');
+    console.log('[OK] Syncing clock...');
+
+    await syncServerClock();
+
+    console.log('[OK] Measuring server latency...');
+    await measureLatency();
+
+    await prewarm();
+
+    console.log('[OK] Building pool (' + CONFIG.sessionsPerCourt + ' per court)...');
+
+    let poolBuilt = false;
+    for (let i = 1; i <= 3; i++) {
+      await refreshPool();
+      if (sessionPool.length) {
+        poolBuilt = true;
+        break;
+      }
+      console.warn('[WARN] Attempt ' + i + ' failed, retry in 2s...');
+      await delay(2000);
+    }
+
+    if (!poolBuilt) {
+      console.error('[ERR] Setup failed - could not build session pool');
+      cleanup();
+      return;
+    }
+
+    // Acquire wake lock
+    if ('wakeLock' in navigator) {
+      try {
+        wakeLock = await navigator.wakeLock.request('screen');
+        console.log('[OK] Wake lock acquired');
+        wakeLock.addEventListener('release', () => {
+          if (!booked) {
+            (async () => {
+              if (!('wakeLock' in navigator)) return;
+              try {
+                wakeLock = await navigator.wakeLock.request('screen');
+              } catch (err) {
+                console.warn('Failed to reacquire wake lock:', err.message);
+              }
+            })();
+          }
+        });
+      } catch (err) {
+        console.warn('[WARN] Wake lock failed:', err.message);
+      }
+    }
+
+    const openTime = CONFIG.openAtMs + serverClockOffset;
+    const timeLeft = openTime - now();
+
+    if (timeLeft <= CONFIG.prefireMs) {
+      console.log('[FIRING] Window open - NOW!');
+      await fireBlitz();
+    } else {
+      const hours = Math.floor(timeLeft / 3600000);
+      const mins = Math.floor((timeLeft % 3600000) / 60000);
+      console.log('[OK] Armed! Opens in ' + hours + 'h ' + mins + 'm');
+      console.log('[OK] Pool: ' + sessionPool.length + ' sessions | Refresh: ' + (CONFIG.keepaliveMs / 1000) + 's');
+
+      // Keepalive timer
+      keepaliveTimer = setInterval(() => {
+        if (booked || (openTime - now() < 5000)) {
+          clearInterval(keepaliveTimer);
+          return;
+        }
+        if (!shouldRebuild()) {
+          (async () => {
+            try {
+              availableZones = null;
+              await refreshPool();
+            } catch (err) {
+              console.warn('Keepalive refresh failed:', err.message);
+            }
+          })();
+        }
+      }, CONFIG.keepaliveMs);
+
+      countdown();
+    }
+  }
+
+  // Error handler
+  window.addEventListener('error', (err) => {
+    console.error('[ERR] Unhandled error:', err.message);
+    cleanup();
+  });
+
+  // Start
+  main().catch(err => {
+    console.error('[ERR] Main error:', err);
+    cleanup();
+  });
+
+  return {
+    cleanup: cleanup
+  };
+})();`
+    }
+
     function copyScript() {
       if (!generatedScript) return;
       if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(generatedScript).then(function() {
-          var btn = document.getElementById('copy-btn');
-          btn.textContent = 'Copied!';
-          setTimeout(function() { btn.textContent = 'Copy Script'; }, 2000);
-        }).catch(function() { fallbackCopy(); });
+        navigator.clipboard.writeText(generatedScript).then(() => {
+          el('copy-btn').textContent = 'Copied!';
+          setTimeout(() => { el('copy-btn').textContent = 'Copy Script'; }, 2000);
+        }).catch(() => fallbackCopy());
       } else {
         fallbackCopy();
       }
     }
 
     function fallbackCopy() {
-      var ta = document.createElement('textarea');
+      const ta = document.createElement('textarea');
       ta.value = generatedScript;
       ta.style.position = 'fixed';
       ta.style.opacity = '0';
       document.body.appendChild(ta);
       ta.focus();
       ta.select();
-      try { document.execCommand('copy'); } catch(e) {}
+      try { document.execCommand('copy'); } catch (e) {}
       document.body.removeChild(ta);
-      var btn = document.getElementById('copy-btn');
-      btn.textContent = 'Copied!';
-      setTimeout(function() { btn.textContent = 'Copy Script'; }, 2000);
+      el('copy-btn').textContent = 'Copied!';
+      setTimeout(() => { el('copy-btn').textContent = 'Copy Script'; }, 2000);
     }
 
     function reset() {
       generatedScript = '';
-      document.getElementById('setup-screen').classList.remove('hidden');
-      document.getElementById('run-screen').classList.remove('show');
+      el('setup-screen').classList.remove('hidden');
+      el('run-screen').classList.remove('show');
     }
 
-    document.getElementById('generate-btn').addEventListener('click', generate);
-    document.getElementById('copy-btn').addEventListener('click', copyScript);
+    // Event listeners
+    el('generate-btn').addEventListener('click', generate);
+    el('copy-btn').addEventListener('click', copyScript);
     document.querySelector('#run-screen .btn-secondary').addEventListener('click', reset);
-    document.getElementById('date').addEventListener('input', updateOpens);
-    document.getElementById('time').addEventListener('input', updateOpens);
+    el('date').addEventListener('input', updateOpens);
+    el('time').addEventListener('input', updateOpens);
 
-    window.addEventListener('DOMContentLoaded', function() {
-      ['date','time','userId','ruleId','duration','token'].forEach(function(id) {
-        var v = localStorage.getItem('kb_' + id);
-        if (v) document.getElementById(id).value = v;
+    // Init
+    window.addEventListener('DOMContentLoaded', () => {
+      ['date', 'time', 'userId', 'ruleId', 'duration', 'token'].forEach(id => {
+        const v = localStorage.getItem('kb_' + id);
+        if (v) el(id).value = v;
       });
       setDateMin();
       updateOpens();
