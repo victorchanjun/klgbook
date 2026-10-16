@@ -7,88 +7,68 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Booker">
-  <title>Kallang Booker Nuclear</title>
+  <meta name="apple-mobile-web-app-title" content="PG Booker">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon-192.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon-192.svg">
+  <title>PG Booker — PerfectGym Script Generator</title>
   <style>
     :root {
-      --bg:       #0a1628;
-      --surface:  #111f38;
-      --border:   #1e3255;
-      --green:    #1D9E75;
-      --green-dk: #0F6E56;
-      --green-lt: #9FE1CB;
-      --red:      #ef4444;
-      --amber:    #f59e0b;
-      --text:     #e2e8f0;
-      --muted:    #64748b;
-      --mono:     'JetBrains Mono', 'Fira Mono', monospace;
+      --bg: #0a1628; --surface: #111f38; --border: #1e3255;
+      --green: #1D9E75; --green-dk: #0F6E56; --green-lt: #9FE1CB;
+      --red: #ef4444; --amber: #f59e0b; --text: #e2e8f0; --muted: #64748b;
+      --mono: 'JetBrains Mono', 'Fira Mono', monospace;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
-      background: var(--bg);
-      color: var(--text);
+      background: var(--bg); color: var(--text);
       min-height: 100dvh;
       padding: calc(env(safe-area-inset-top, 0px) + 20px) 16px calc(env(safe-area-inset-bottom, 0px) + 28px);
-      max-width: 480px;
-      margin: 0 auto;
+      max-width: 520px; margin: 0 auto;
     }
-
-    .header { display: flex; align-items: center; gap: 10px; margin-bottom: 22px; }
+    .header { display: flex; align-items: gap; gap: 10px; margin-bottom: 20px; }
     .header-icon { font-size: 30px; line-height: 1; }
     .header-title { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
     .header-sub { font-size: 12px; color: var(--muted); margin-top: 1px; }
-
     .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px; margin-bottom: 12px; }
     .card-label { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
-
     .field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
     .field:last-child { margin-bottom: 0; }
     .field label { font-size: 12px; color: var(--muted); font-weight: 500; }
     .field input, .field select, .field textarea {
-      width: 100%; padding: 11px 12px;
-      background: var(--bg); border: 1px solid var(--border); border-radius: 9px;
-      color: var(--text); font-size: 15px; font-family: inherit;
+      width: 100%; padding: 11px 12px; background: var(--bg); border: 1px solid var(--border);
+      border-radius: 9px; color: var(--text); font-size: 15px; font-family: inherit;
       -webkit-appearance: none; appearance: none;
     }
     .field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: var(--green); }
-    .field textarea { font-family: var(--mono); font-size: 11px; min-height: 76px; resize: none; line-height: 1.6; }
+    .field textarea { font-family: var(--mono); font-size: 12px; min-height: 70px; resize: vertical; line-height: 1.6; }
     .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-
-    .opens-pill {
-      display: flex; align-items: center; gap: 8px;
-      background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
-      padding: 8px 12px; font-size: 12px; font-family: var(--mono); color: var(--green-lt); margin-top: 10px;
-    }
-    .opens-pill .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
-
+    .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+    .hint { font-size: 11px; color: var(--muted); margin-top: 6px; line-height: 1.5; }
+    .check { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text); }
+    .check input { width: 18px; height: 18px; accent-color: var(--green); }
     .btn-primary {
-      width: 100%; padding: 15px; background: var(--green); color: white;
-      border: none; border-radius: 12px; font-size: 15px; font-weight: 700;
-      cursor: pointer; margin-top: 4px;
-      -webkit-appearance: none; letter-spacing: 0.01em;
-      transition: background 0.15s, transform 0.1s;
+      width: 100%; padding: 15px; background: var(--green); color: white; border: none;
+      border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 4px;
+      -webkit-appearance: none; transition: background 0.15s, transform 0.1s;
     }
     .btn-primary:active { background: var(--green-dk); transform: scale(0.98); }
     .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
-
     .btn-secondary {
       width: 100%; padding: 13px; background: none; border: 1px solid var(--border);
-      color: var(--muted); border-radius: 12px; font-size: 14px;
-      cursor: pointer; margin-top: 8px; -webkit-appearance: none;
+      color: var(--muted); border-radius: 12px; font-size: 14px; cursor: pointer; margin-top: 8px;
     }
     .btn-secondary:active { border-color: var(--red); color: var(--red); }
-
     #run-screen { display: none; }
     #run-screen.show { display: block; }
     #setup-screen.hidden { display: none; }
-
     .script-box {
-      background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
-      padding: 12px; font-family: var(--mono); font-size: 10px; color: var(--green-lt);
-      line-height: 1.5; word-break: break-all; max-height: 120px; overflow-y: auto;
-      margin-bottom: 10px; user-select: all;
+      background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 12px;
+      font-family: var(--mono); font-size: 10px; color: var(--green-lt); line-height: 1.5;
+      word-break: break-all; max-height: 140px; overflow-y: auto; margin-bottom: 10px; user-select: all;
     }
+    .warn { font-size: 11px; color: var(--amber); line-height: 1.5; margin-top: 10px; }
   </style>
 </head>
 <body>
@@ -96,12 +76,58 @@
   <div class="header">
     <div class="header-icon">🏸</div>
     <div>
-      <div class="header-title">Kallang Booker</div>
-      <div class="header-sub">Nuclear auto-booker</div>
+      <div class="header-title">PG Booker</div>
+      <div class="header-sub">PerfectGym booking script generator</div>
     </div>
   </div>
 
   <div id="setup-screen">
+    <div class="card">
+      <div class="card-label">Portal</div>
+      <div class="field">
+        <label>Base URL</label>
+        <input type="text" id="base" value="https://thekallang.perfectgym.com/clientportal2" spellcheck="false">
+      </div>
+      <div class="grid3">
+        <div class="field">
+          <label>Club ID</label>
+          <input type="number" id="clubId" value="1" inputmode="numeric">
+        </div>
+        <div class="field">
+          <label>Zone Type ID</label>
+          <input type="number" id="zoneTypeId" value="31" inputmode="numeric">
+        </div>
+        <div class="field">
+          <label>Wizard</label>
+          <select id="wizard">
+            <option value="auto" selected>auto-detect</option>
+            <option value="buyproduct">BuyProduct…</option>
+            <option value="bookfacility">BookFacility</option>
+          </select>
+        </div>
+      </div>
+      <p class="hint">clubId / zoneTypeId are in the portal's FacilityBooking URL.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Account</div>
+      <div class="grid2">
+        <div class="field">
+          <label>Email</label>
+          <input type="email" id="email" autocomplete="off" spellcheck="false">
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <input type="password" id="password" autocomplete="off">
+        </div>
+      </div>
+      <div class="field">
+        <label>JWT (optional — only if login is blocked)</label>
+        <input type="text" id="jwt" placeholder="paste token without Bearer prefix" spellcheck="false">
+      </div>
+      <p class="hint">Login is done automatically by the script and refreshed if the session expires — no manual token juggling during long waits.</p>
+    </div>
+
     <div class="card">
       <div class="card-label">Target Slot</div>
       <div class="grid2">
@@ -110,50 +136,88 @@
           <input type="date" id="date">
         </div>
         <div class="field">
-          <label>Time</label>
-          <input type="time" id="time" value="07:00">
-        </div>
-      </div>
-      <div class="opens-pill">
-        <span class="dot"></span>
-        <span id="opens-text">Select date and time</span>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-label">Account</div>
-      <div class="grid2">
-        <div class="field">
-          <label>User ID</label>
-          <input type="number" id="userId" value="62061" inputmode="numeric">
-        </div>
-        <div class="field">
-          <label>Rule ID</label>
-          <input type="number" id="ruleId" value="19" inputmode="numeric">
+          <label>Duration (min)</label>
+          <select id="duration">
+            <option value="30">30</option>
+            <option value="60" selected>60</option>
+            <option value="90">90</option>
+            <option value="120">120</option>
+          </select>
         </div>
       </div>
       <div class="field">
-        <label>Duration (min)</label>
-        <select id="duration">
-          <option value="60">60 minutes</option>
-          <option value="90">90 minutes</option>
-          <option value="120">120 minutes</option>
+        <label>Priority start times (one per line, best first)</label>
+        <textarea id="times">07:00
+07:30
+08:00</textarea>
+      </div>
+      <p class="hint">If your first choice is taken, waves automatically fall through to the next time.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Open Detection</div>
+      <div class="field">
+        <label class="check">
+          <input type="checkbox" id="autoDetect" checked>
+          Auto-detect when the slot actually opens (recommended)
+        </label>
+      </div>
+      <div class="field" id="window-field">
+        <label>Booking window (days) — used only for pacing when auto-detect is off</label>
+        <select id="windowDays" disabled>
+          <option value="7" selected>7</option>
+          <option value="14">14</option>
+          <option value="21">21</option>
+          <option value="28">28</option>
         </select>
       </div>
+      <p class="hint">Windows vary by member rate (e.g. 7 vs 14 days). Auto-detect polls the availability API and fires the instant your slot turns bookable — no window guesswork.</p>
     </div>
 
     <div class="card">
-      <div class="card-label">Bearer Token</div>
-      <div class="field">
-        <label>JWT — no "Bearer " prefix</label>
-        <textarea id="token" placeholder="eyJhbGci..." autocomplete="off" autocorrect="off" spellcheck="false"></textarea>
+      <div class="card-label">Strategy</div>
+      <div class="grid2">
+        <div class="field">
+          <label>Mode</label>
+          <select id="mode">
+            <option value="open+sniper" selected>Open-fire + sniper</option>
+            <option value="open">Open-fire only</option>
+            <option value="sniper">Sniper only</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Aggressiveness</label>
+          <select id="aggressiveness">
+            <option value="conservative">Conservative</option>
+            <option value="balanced" selected>Balanced</option>
+            <option value="nuclear">Nuclear</option>
+          </select>
+        </div>
       </div>
+      <div class="grid2">
+        <div class="field">
+          <label>Retry window (s)</label>
+          <select id="retryWindow">
+            <option value="60000">60</option>
+            <option value="120000" selected>120</option>
+            <option value="300000">300</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Sniper until (h before)</label>
+          <select id="sniperHours">
+            <option value="1" selected>1</option>
+            <option value="3">3</option>
+            <option value="12">12</option>
+            <option value="24">24</option>
+          </select>
+        </div>
+      </div>
+      <p class="hint">Sniper watches for cancellations after the open window and fires the moment your slot reappears. Pacing adapts automatically: 429s widen the wave interval, healthy waves tighten it.</p>
     </div>
 
     <button class="btn-primary" id="generate-btn">Generate &amp; Copy Script</button>
-    <p style="font-size:11px;color:var(--muted);text-align:center;margin-top:10px;">
-      Then open <strong style="color:var(--text)">thekallang.perfectgym.com</strong>, open DevTools console, paste &amp; run.
-    </p>
+    <p class="warn">⚠️ Personal use only. Aggressive automation may breach your club's terms — keep aggressiveness at Conservative/Balanced unless you accept the risk. A booking is only confirmed once you complete payment.</p>
   </div>
 
   <div id="run-screen">
@@ -162,737 +226,750 @@
       <div class="script-box" id="script-preview"></div>
       <button class="btn-primary" id="copy-btn">Copy Script</button>
       <a id="open-btn" class="btn-primary" style="margin-top:8px;background:var(--green-dk)"
-         href="https://thekallang.perfectgym.com/clientportal2/#/FacilityBooking"
-         target="_blank" rel="noopener">Open Kallang →</a>
-      <button class="btn-secondary">← Back</button>
+         href="#" target="_blank" rel="noopener">Open Portal →</a>
+      <button class="btn-secondary" id="back-btn">← Back</button>
     </div>
-    <p style="font-size:11px;color:var(--muted);text-align:center;margin-top:4px;">
-      Paste into the browser console on the Kallang tab. Keep the tab open.
+    <p class="hint">
+      1. Open the portal link above and <strong>log out</strong> (the script logs in itself).<br>
+      2. Open DevTools console (F12 → Console) on the portal tab.<br>
+      3. Paste the script and press Enter. Keep the tab open and the screen awake.<br>
+      4. Watch the console: [BOOKER] logs, then <strong>[BOOKED!]</strong> + a payment redirect.
     </p>
   </div>
 
   <script>
 (function () {
-    'use strict';
-    let generatedScript = '';
+  'use strict';
+  let generatedScript = '';
 
-    function el(id) { return document.getElementById(id); }
+  function el(id) { return document.getElementById(id); }
 
-    function setDateMin() {
-      const today = new Date();
-      el('date').min = today.toISOString().slice(0, 10);
-    }
-
-    function updateOpens() {
-      const date = el('date').value;
-      const time = el('time').value;
-      const opensText = el('opens-text');
-      if (!date || !time) { opensText.textContent = 'Select date and time'; return; }
-      const openMs = new Date(date + 'T' + time + ':00').getTime() - 168 * 3600000;
-      opensText.textContent = 'Opens: ' + new Date(openMs).toLocaleString('en-SG', {
-        weekday: 'short', month: 'short', day: 'numeric',
-        hour: '2-digit', minute: '2-digit', second: '2-digit'
-      });
-    }
-
-    function generate() {
-      try {
-        const date = el('date').value;
-        const time = el('time').value;
-        const userId = el('userId').value;
-        const ruleId = el('ruleId').value;
-        const duration = el('duration').value;
-        const token = el('token').value.replace(/\s+/g, '').trim();
-
-        if (!date || !time || !token) { alert('Fill in date, time, and token'); return; }
-        if (token.length < 20) { alert('Token looks too short. Check your JWT.'); return; }
-
-        ['date', 'time', 'userId', 'ruleId', 'duration', 'token'].forEach(id => {
-          localStorage.setItem('kb_' + id, el(id).value);
-        });
-
-        const startTime = date + 'T' + time + ':00';
-        const openMs = new Date(startTime).getTime() - 168 * 3600000;
-
-        generatedScript = generateScript({
-          openMs,
-          startTime,
-          date,
-          userId,
-          ruleId,
-          duration,
-          token
-        });
-
-        el('script-preview').textContent = generatedScript.slice(0, 300) + '...';
-        el('setup-screen').classList.add('hidden');
-        el('run-screen').classList.add('show');
-        copyScript();
-      } catch (err) {
-        console.error('Generate error:', err);
-        alert('Error generating script: ' + err.message);
-      }
-    }
-
-    function generateScript(cfg) {
-      return `(async function() {
+  // ============ generated script builder ============
+  // The generated script must not contain backticks or ${ — it is a template literal.
+  //__GEN_START__
+  function generateScript(c) {
+    return `(function () {
   'use strict';
 
-  // Configuration
-  const CONFIG = {
-    openAtMs: ${cfg.openMs},
-    startTime: '${cfg.startTime}',
-    slotDate: '${cfg.date}',
-    userId: ${cfg.userId},
-    ruleId: ${cfg.ruleId},
-    duration: ${cfg.duration},
-    token: '${cfg.token}',
-    base: 'https://thekallang.perfectgym.com/clientportal2',
-    clubId: 1,
-    zoneType: 31,
-    retryDurationMs: 600 * 1000,
-    parallelShots: 1,
-    waveIntervalMs: 2000,
-    keepaliveMs: 30000,
-    sessionsPerCourt: 1,
-    serverClockRetries: 2,
-    prefireMs: 15000,
-    poolLowThreshold: 0.15,
-    maxConcurrency: 1,
-    warmupRequests: 1,
-    buildDelay: 100
+  // ================= CONFIG (generated) =================
+  var CFG = {
+    base: ${JSON.stringify(c.base)},
+    clubId: ${c.clubId},
+    zoneTypeId: ${c.zoneTypeId},
+    email: ${JSON.stringify(c.email)},
+    password: ${JSON.stringify(c.password)},
+    jwt: ${JSON.stringify(c.jwt)},
+    userId: null,
+    slotDate: ${JSON.stringify(c.slotDate)},
+    priorityTimes: ${JSON.stringify(c.priorityTimes)},
+    duration: ${c.duration},
+    autoDetect: ${c.autoDetect},
+    windowDays: ${c.windowDays},
+    mode: ${JSON.stringify(c.mode)},
+    sniperHoursBefore: ${c.sniperHoursBefore},
+    preset: ${JSON.stringify(c.aggressiveness)},
+    retryWindowMs: ${c.retryWindowMs},
+    ruleIdOverride: ${c.ruleIdOverride},
+    wizard: ${JSON.stringify(c.wizard)}
   };
 
-  // State
-  let sessionPool = [];
-  let booked = false;
-  let wakeLock = null;
-  let serverClockOffset = 0;
-  let clockSynced = false;
-  let measuredLatency = 0;
-  let originalPoolCount = 0;
-  let availableZones = null;
-  let preRebuilt = false;
-  let keepaliveTimer = null;
-  let countdownTimer = null;
-  let fireInterval = null;
-
-  // Stats
-  const stats = {
-    waveCount: 0,
-    totalSent: 0,
-    totalOk: 0,
-    totalFail: 0,
-    rateLimited: 0
+  var PRESETS = {
+    conservative: { wave: 2000, shots: 1, conc: 1, keepalive: 30000 },
+    balanced:     { wave: 800,  shots: 1, conc: 2, keepalive: 20000 },
+    nuclear:      { wave: 250,  shots: 2, conc: 3, keepalive: 10000 }
   };
 
-  // Cached values
-  const cache = {
-    openDate: null,
-    openDateTs: 0,
-    authHeaders: null,
-    baseUrl: null
-  };
-  const CACHE_TTL = 5000;
+  var P = PRESETS[CFG.preset] || PRESETS.balanced;
+  var ROOT = CFG.base.replace(/\\/clientportal2\\/?$/i, '');
 
-  // Helpers
-  function pad(n) { return String(Math.floor(n)).padStart(2, '0'); }
+  // ================= state =================
+  var stopFlag = false;
+  var booked = false;
+  var clockOffset = 0;
+  var latency = 200;
+  var ruleId = CFG.ruleIdOverride || null;
+  var wizardPath = null;           // resolved FacilityBookings/<wizard>/
+  var zones = [];
+  var pool = [];                   // sessions for current priority time
+  var curTimeIdx = 0;
+  var waveInterval = P.wave;
+  var healthyWaves = 0;
+  var wakeLock = null;
+  var keepaliveTimer = null;
+  var blitzTimer = null;
+  var reloginDone = false;
 
-  function now() { return Date.now(); }
+  var stats = { waves: 0, sent: 0, ok: 0, fail: 0, rl: 0, polls: 0 };
+  var bookedHandled = false;
 
-  function delay(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
-
-  function isCacheValid(key) {
-    return cache[key + '_ts'] && (now() - cache[key + '_ts']) < CACHE_TTL;
+  // ================= helpers =================
+  function log() {
+    var a = Array.prototype.slice.call(arguments);
+    a.unshift('[BOOKER]');
+    console.log.apply(console, a);
+  }
+  function err() {
+    var a = Array.prototype.slice.call(arguments);
+    a.unshift('[BOOKER][ERR]');
+    console.error.apply(console, a);
+  }
+  function delay(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+  function jitter(ms) { return ms * (0.85 + Math.random() * 0.3); }
+  function currentStartTime() {
+    return CFG.slotDate + 'T' + CFG.priorityTimes[Math.min(curTimeIdx, CFG.priorityTimes.length - 1)] + ':00';
+  }
+  function estimatedOpenMs() {
+    return new Date(CFG.slotDate + 'T' + CFG.priorityTimes[0] + ':00').getTime() - CFG.windowDays * 86400000;
   }
 
-  function setCache(key, value) {
-    cache[key] = value;
-    cache[key + '_ts'] = now();
-  }
-
-  function getOpenDate() {
-    if (isCacheValid('openDate')) return cache.openDate;
-    const d = new Date(CONFIG.openAtMs + serverClockOffset);
-    const date = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-    setCache('openDate', date);
-    return date;
-  }
-
-  function getAuthHeaders() {
-    if (isCacheValid('authHeaders')) return cache.authHeaders;
-    const headers = {
+  function authHeaders(extra) {
+    var h = {
       'Accept': 'application/json, text/plain, */*',
-      'Authorization': 'Bearer ' + CONFIG.token,
       'X-Requested-With': 'XMLHttpRequest',
       'CP-LANG': 'en',
       'CP-MODE': 'desktop'
     };
-    setCache('authHeaders', headers);
-    return headers;
+    if (CFG.jwt) h['Authorization'] = 'Bearer ' + CFG.jwt;
+    if (extra) { for (var k in extra) h[k] = extra[k]; }
+    return h;
   }
 
-  function getBaseUrl() {
-    if (isCacheValid('baseUrl')) return cache.baseUrl;
-    const url = CONFIG.base + '/FacilityBookings/BuyProductBeforeBookingFacility/Start?clubId=' + CONFIG.clubId + '&zoneTypeId=' + CONFIG.zoneType + '&date=' + getOpenDate() + '&startDate=' + CONFIG.startTime;
-    setCache('baseUrl', url);
-    return url;
-  }
-
-  async function fetchWithRetry(url, options, retries) {
-    retries = retries || 1;
-    try {
-      const response = await fetch(url, options);
-      if (response.status === 429) {
-        stats.rateLimited++;
-        await delay(1000);
-        if (retries > 0) return fetchWithRetry(url, options, retries - 1);
-        return response;
-      }
-      return response;
-    } catch (err) {
-      if (retries > 0) {
-        await delay(500);
-        return fetchWithRetry(url, options, retries - 1);
-      }
-      throw err;
-    }
-  }
-
-  async function syncServerClock() {
-    for (let i = 1; i <= CONFIG.serverClockRetries; i++) {
-      try {
-        const t0 = now();
-        const response = await fetchWithRetry(getBaseUrl(), {
-          credentials: 'include',
-          headers: getAuthHeaders(),
-          mode: 'cors'
-        });
-        const t1 = now();
-        const dateHeader = response.headers.get('date') || response.headers.get('Date');
-        if (dateHeader) {
-          serverClockOffset = new Date(dateHeader).getTime() - (t0 + (t1 - t0) / 2);
-          clockSynced = true;
-          console.log('[OK] Clock synced. Offset: ' + serverClockOffset + 'ms');
-          return true;
-        }
-      } catch (err) {
-        console.warn('Clock sync attempt ' + i + ' failed: ' + err.message);
-      }
-      await delay(300);
-    }
-    console.warn('[WARN] Could not sync clock');
-    return false;
-  }
-
-  async function fetchZones() {
-    try {
-      const response = await fetchWithRetry(getBaseUrl(), {
-        credentials: 'include',
-        headers: getAuthHeaders()
-      });
-      if (!response.ok) {
-        console.warn('Fetch zones failed: ' + response.status);
-        return null;
-      }
-      const data = await response.json();
-      const zones = (data.Data && data.Data.Zones) ? data.Data.Zones : [];
-      if (!zones.length) return null;
-      zones.sort((a, b) => {
-        const numA = parseInt((a.Name.match(/\\d+$/) || ['0'])[0]) || 0;
-        const numB = parseInt((b.Name.match(/\\d+$/) || ['0'])[0]) || 0;
-        return numB - numA;
-      });
-      return zones;
-    } catch (err) {
-      console.error('Error fetching zones:', err);
-      return null;
-    }
-  }
-
-  async function buildSession(zone) {
-    try {
-      const response1 = await fetchWithRetry(getBaseUrl(), {
-        credentials: 'include',
-        headers: getAuthHeaders()
-      });
-      if (!response1.ok) return null;
-
-      const sessionId = response1.headers.get('cp-buy-product-before-booking-fb-session-id');
-      if (!sessionId) return null;
-
-      const headers = {
-        'Content-Type': 'application/json;charset=utf-8',
-        'Accept': 'application/json, text/plain, */*',
-        'Authorization': 'Bearer ' + CONFIG.token,
-        'X-Hash': '#/FacilityBooking?clubId=' + CONFIG.clubId + '&zoneTypeId=' + CONFIG.zoneType + '&date=' + CONFIG.slotDate,
-        'BAF-WIZARD-CURRENTURL': CONFIG.base + '/#/FacilityBooking?clubId=' + CONFIG.clubId + '&zoneTypeId=' + CONFIG.zoneType + '&date=' + CONFIG.slotDate + '&sessionId=' + sessionId,
-        'CP-BUY-PRODUCT-BEFORE-BOOKING-FB-SESSION-ID': sessionId,
-        'X-Requested-With': 'XMLHttpRequest',
-        'CP-LANG': 'en',
-        'CP-MODE': 'desktop'
-      };
-
-      const body = JSON.stringify({
-        UserId: CONFIG.userId,
-        ZoneId: zone.Id,
-        StartTime: CONFIG.startTime,
-        RequiredNumberOfSlots: null,
-        Duration: CONFIG.duration
-      });
-
-      const response2 = await fetchWithRetry(CONFIG.base + '/FacilityBookings/WizardSteps/SetFacilityBookingDetailsWizardStep/Next', {
-        method: 'POST',
-        credentials: 'include',
-        headers: headers,
-        body: body
-      });
-
-      if (!response2.ok) return null;
-
-      return { sessionId, zoneId: zone.Id, zone };
-    } catch (err) {
-      console.warn('Build session failed for zone ' + zone.Id + ':', err.message);
-      return null;
-    }
-  }
-
-  async function refreshPool() {
-    try {
-      if (!availableZones) {
-        availableZones = await fetchZones();
-        if (!availableZones) {
-          console.log('[ERR] No zones available');
-          return;
-        }
-        console.log('[OK] Courts: ' + availableZones.map(z => z.Name).join(', '));
-      }
-
-      // Store functions, not promises - to control when builds start
-      const buildFns = [];
-      for (let i = 0; i < availableZones.length; i++) {
-        for (let j = 0; j < CONFIG.sessionsPerCourt; j++) {
-          const zone = availableZones[i];
-          buildFns.push(() => buildSession(zone));
-        }
-      }
-
-      // Process in batches with stricter concurrency control
-      const results = [];
-      const batchSize = CONFIG.maxConcurrency;
-      
-      for (let i = 0; i < buildFns.length; i += batchSize) {
-        // Longer delay between batches to reduce rate limiting
-        if (i > 0) {
-          await delay(500);
-        }
-        
-        const batch = buildFns.slice(i, i + batchSize);
-        const batchPromises = batch.map(fn => fn());
-        const batchResults = await Promise.all(batchPromises);
-        
-        for (const result of batchResults) {
-          if (result) results.push(result);
-        }
-      }
-
-      sessionPool = results;
-      originalPoolCount = sessionPool.length;
-      console.log('[OK] Pool: ' + sessionPool.length + '/' + (availableZones.length * CONFIG.sessionsPerCourt) + ' sessions');
-    } catch (err) {
-      console.error('Error refreshing pool:', err);
-    }
-  }
-
-  async function tryStep3(session) {
-    if (booked) return false;
-
-    const headers = {
+  function wizardHeaders(sessionId) {
+    return authHeaders({
       'Content-Type': 'application/json;charset=utf-8',
-      'Accept': 'application/json, text/plain, */*',
-      'Authorization': 'Bearer ' + CONFIG.token,
-      'X-Hash': '#/FacilityBooking?clubId=' + CONFIG.clubId + '&zoneTypeId=' + CONFIG.zoneType + '&date=' + CONFIG.slotDate,
-      'BAF-WIZARD-CURRENTURL': CONFIG.base + '/#/FacilityBooking?clubId=' + CONFIG.clubId + '&zoneTypeId=' + CONFIG.zoneType + '&date=' + CONFIG.slotDate + '&sessionId=' + session.sessionId,
-      'CP-BUY-PRODUCT-BEFORE-BOOKING-FB-SESSION-ID': session.sessionId,
-      'X-Requested-With': 'XMLHttpRequest',
-      'CP-LANG': 'en',
-      'CP-MODE': 'desktop'
-    };
-
-    const body = JSON.stringify({
-      ruleId: CONFIG.ruleId,
-      OtherCalendarEventBookedAtRequestedTime: false,
-      HasUserRequiredProducts: false
+      'X-Hash': '#/FacilityBooking?clubId=' + CFG.clubId + '&zoneTypeId=' + CFG.zoneTypeId + '&date=' + CFG.slotDate,
+      'BAF-WIZARD-CURRENTURL': CFG.base + '/#/FacilityBooking?clubId=' + CFG.clubId + '&zoneTypeId=' + CFG.zoneTypeId + '&date=' + CFG.slotDate + '&sessionId=' + sessionId,
+      'CP-BUY-PRODUCT-BEFORE-BOOKING-FB-SESSION-ID': sessionId
     });
-
-    try {
-      const response = await fetchWithRetry(CONFIG.base + '/FacilityBookings/WizardSteps/ChooseBookingRuleStep/Next', {
-        method: 'POST',
-        credentials: 'include',
-        headers: headers,
-        body: body
-      });
-
-      stats.totalSent++;
-
-      if (response.status === 429) {
-        stats.rateLimited++;
-        return false;
-      }
-
-      if (!response.ok) {
-        stats.totalFail++;
-        return false;
-      }
-
-      const data = await response.json();
-
-      if (data.Redirect || (data.Data && data.Data.Booked)) {
-        stats.totalOk++;
-        booked = true;
-        console.log('[BOOKED!] Court: ' + (session.zone ? session.zone.Name : ''));
-        console.log('Stats: ' + stats.totalSent + ' sent, ' + stats.totalOk + ' ok, ' + stats.totalFail + ' fail, ' + stats.rateLimited + ' rate-limited');
-        releaseWakeLock();
-        if (data.Redirect) {
-          console.log('Payment: ' + data.Redirect);
-          window.location.href = data.Redirect;
-        }
-        return true;
-      }
-
-      return false;
-    } catch (err) {
-      stats.totalFail++;
-      console.warn('Step 3 failed:', err.message);
-      return false;
-    }
   }
 
-  async function poolSalvo() {
-    if (booked) return false;
+  // ================= auth =================
+  async function login() {
+    var res = await fetch(CFG.base + '/Auth/Login', {
+      method: 'POST',
+      credentials: 'include',
+      headers: authHeaders({ 'Content-Type': 'application/json;charset=utf-8' }),
+      body: JSON.stringify({ RememberMe: true, Login: CFG.email, Password: CFG.password })
+    });
+    if (!res.ok) throw new Error('login HTTP ' + res.status);
+    var d = await res.json();
+    var m = d && d.User && d.User.Member;
+    if (!m || !m.Id) throw new Error('login: no user in response');
+    CFG.userId = m.Id;
+    log('logged in as', (m.FirstName || '') + ' ' + (m.LastName || ''), '| userId=' + CFG.userId);
+  }
 
-    const requests = [];
-    for (let i = 0; i < sessionPool.length; i++) {
-      for (let j = 0; j < CONFIG.parallelShots; j++) {
-        requests.push(() => tryStep3(sessionPool[i]));
+  async function ensureAuth(res) {
+    // 401/403 with credentials available: re-login once and retry
+    if ((res.status === 401 || res.status === 403) && CFG.email && CFG.password && !reloginDone) {
+      reloginDone = true;
+      log('session expired (HTTP ' + res.status + ') — re-logging in…');
+      try {
+        await login();
+        log('re-login OK');
+        return true;
+      } catch (e) {
+        err('re-login failed:', e.message);
       }
     }
-
-    // Process in batches
-    for (let i = 0; i < requests.length; i += CONFIG.maxConcurrency) {
-      if (booked) return true;
-      const batch = requests.slice(i, i + CONFIG.maxConcurrency);
-      const results = await Promise.all(batch.map(fn => fn()))
-      if (results.some(r => r)) return true;
-    }
-
     return false;
   }
 
-  function shouldRebuild() {
-    if (originalPoolCount === 0) return false;
-    return sessionPool.length < originalPoolCount * CONFIG.poolLowThreshold;
-  }
-
-  function releaseWakeLock() {
-    if (wakeLock) {
-      wakeLock.release().catch(() => {});
-      wakeLock = null;
-    }
-  }
-
-  async function fireBlitz() {
-    clearInterval(keepaliveTimer);
-    keepaliveTimer = null;
-
-    console.log('[FIRING] ' + sessionPool.length + ' sessions x ' + CONFIG.parallelShots + ' = ' + (sessionPool.length * CONFIG.parallelShots) + ' per wave');
-
-    const deadline = CONFIG.openAtMs + serverClockOffset + CONFIG.retryDurationMs;
-
-    fireInterval = setInterval(() => {
-      if (booked) { clearInterval(fireInterval); return; }
-      if (!shouldRebuild()) {
-        (async () => {
-          try {
-            availableZones = null;
-            await refreshPool();
-          } catch (err) {
-            console.warn('Pool refresh failed:', err.message);
-          }
-        })();
-      }
-    }, CONFIG.keepaliveMs);
-
-    function fireWave() {
-      if (booked || now() > deadline) {
-        clearInterval(fireInterval);
-        return;
-      }
-      stats.waveCount++;
-      if (stats.rateLimited > 5 && stats.waveCount % 5 === 0) {
-        console.warn('[RATE] ' + stats.rateLimited + ' rate-limited responses detected');
-      }
-      console.log('[WAVE] #' + stats.waveCount + (shouldRebuild() ? ' (pool low)' : ''));
-      poolSalvo().catch(err => {
-        console.warn('Wave error:', err.message);
-      });
-      setTimeout(fireWave, CONFIG.waveIntervalMs);
-    }
-
-    fireWave();
-
-    await new Promise(resolve => {
-      const check = setInterval(() => {
-        if (booked || now() > deadline) {
-          clearInterval(check);
-          clearInterval(fireInterval);
-          releaseWakeLock();
-          resolve();
-        }
-      }, 10);
-    });
-
-    if (!booked) {
-      console.error('[FAIL] No court after ' + (CONFIG.retryDurationMs / 1000) + 's | Waves: ' + stats.waveCount + ' | Sent: ' + stats.totalSent + ' | OK: ' + stats.totalOk + ' | Fail: ' + stats.totalFail + ' | Rate-limited: ' + stats.rateLimited);
-      if (stats.totalFail > stats.totalOk && stats.totalFail > 0) console.warn('[WARN] High failure rate - check network, token, or rate limiting');
-      if (stats.rateLimited > stats.totalFail) console.warn('[WARN] Heavy rate limiting - consider reducing parallelShots or increasing waveIntervalMs');
-    }
-  }
-
-  async function prewarm() {
-    console.log('[OK] Pre-warming...');
-    for (let i = 0; i < CONFIG.warmupRequests; i++) {
+  // ================= clock & latency =================
+  async function syncClock() {
+    var samples = [];
+    for (var i = 0; i < 3; i++) {
       try {
-        await fetchWithRetry(getBaseUrl(), {
-          credentials: 'include',
-          headers: getAuthHeaders()
-        });
-      } catch (err) {
-        // Ignore warmup errors
-      }
-      await delay(100);
+        var t0 = Date.now();
+        var res = await fetch(CFG.base + '/', { credentials: 'include', mode: 'cors' });
+        var t1 = Date.now();
+        var dh = res.headers.get('date') || res.headers.get('Date');
+        if (dh) samples.push(new Date(dh).getTime() - (t0 + (t1 - t0) / 2));
+      } catch (e) { /* ignore */ }
+      await delay(150);
+    }
+    if (samples.length) {
+      samples.sort(function (a, b) { return a - b; });
+      clockOffset = samples[Math.floor(samples.length / 2)];
+      log('clock synced, offset', Math.round(clockOffset) + 'ms');
+    } else {
+      err('could not sync clock — using local time (timing may drift)');
     }
   }
 
   async function measureLatency() {
-    const times = [];
-    for (let i = 0; i < 3; i++) {
-      const start = performance.now();
+    var times = [];
+    for (var i = 0; i < 3; i++) {
+      var t0 = performance.now();
+      try { await fetch(CFG.base + '/', { credentials: 'include', mode: 'cors' }); } catch (e) { continue; }
+      times.push(performance.now() - t0);
+    }
+    if (times.length) latency = times.reduce(function (a, b) { return a + b; }, 0) / times.length;
+    log('measured latency:', Math.round(latency) + 'ms');
+  }
+
+  // ================= wizard discovery =================
+  async function resolveWizard() {
+    if (CFG.wizard !== 'auto') {
+      wizardPath = CFG.wizard === 'buyproduct'
+        ? 'FacilityBookings/BuyProductBeforeBookingFacility'
+        : 'FacilityBookings/BookFacility';
+      return;
+    }
+    var candidates = [
+      'FacilityBookings/BuyProductBeforeBookingFacility',
+      'FacilityBookings/BookFacility'
+    ];
+    for (var i = 0; i < candidates.length; i++) {
       try {
-        await fetchWithRetry(getBaseUrl(), {
-          credentials: 'include',
-          headers: getAuthHeaders(),
-          mode: 'cors'
-        });
-      } catch (err) {
-        continue;
-      }
-      times.push(performance.now() - start);
+        var res = await fetch(CFG.base + '/' + candidates[i] + '/Start?clubId=' + CFG.clubId +
+          '&zoneTypeId=' + CFG.zoneTypeId + '&date=' + CFG.slotDate + '&startDate=' + currentStartTime(),
+          { credentials: 'include', headers: authHeaders(), mode: 'cors' });
+        if (res.status === 200) { wizardPath = candidates[i]; log('wizard:', wizardPath); return; }
+      } catch (e) { /* try next */ }
     }
-
-    if (times.length > 0) {
-      measuredLatency = times.reduce((sum, t) => sum + t, 0) / times.length;
-    } else {
-      measuredLatency = 200;
-    }
-
-    console.log('[OK] Measured latency: ' + Math.round(measuredLatency) + 'ms');
+    wizardPath = candidates[0];
+    log('wizard probe inconclusive — defaulting to', wizardPath);
   }
 
-  function countdown() {
-    const ms = (CONFIG.openAtMs + serverClockOffset) - now();
-    const fireWindow = Math.max(measuredLatency * 3, 2000);
-
-    if (ms <= (fireWindow + 1500) && !preRebuilt) {
-      preRebuilt = true;
-      console.log('[OK] Pre-rebuilding fresh sessions...');
-      (async () => {
-        try {
-          availableZones = null;
-          await refreshPool();
-          console.log('[OK] Pre-rebuild complete: ' + sessionPool.length + ' sessions');
-        } catch (err) {
-          console.warn('[WARN] Pre-rebuild failed:', err.message);
+  // ================= availability (ground truth) =================
+  async function checkAvailability() {
+    var res = await fetch(CFG.base + '/FacilityBookings/FacilityCalendar/GetWeeklySchedule', {
+      method: 'POST',
+      credentials: 'include',
+      headers: authHeaders({ 'Content-Type': 'application/json;charset=utf-8' }),
+      body: JSON.stringify({ clubId: CFG.clubId, zoneTypeId: String(CFG.zoneTypeId), zoneId: null, daysInWeek: 30 })
+    });
+    if (!res.ok) {
+      if (await ensureAuth(res)) return checkAvailability();
+      throw new Error('schedule HTTP ' + res.status);
+    }
+    var d = await res.json();
+    var cal = d.CalendarData || (d.Data && d.Data.CalendarData) || [];
+    for (var i = 0; i < cal.length; i++) {
+      var cpd = cal[i].ClassesPerDay || [];
+      for (var j = 0; j < cpd.length; j++) {
+        var slots = cpd[j] || [];
+        for (var k = 0; k < slots.length; k++) {
+          var s = slots[k];
+          if (s && s.Status === 'Bookable' && s.StartTime &&
+              s.StartTime.indexOf(CFG.slotDate + 'T') === 0) {
+            var hhmm = s.StartTime.substring(11, 16);
+            if (CFG.priorityTimes.indexOf(hhmm) !== -1) return s;
+          }
         }
-      })();
-    }
-
-    if (ms <= fireWindow) {
-      console.log('[FIRING] Early window: ' + Math.round(fireWindow) + 'ms');
-      clearInterval(countdownTimer);
-      fireBlitz();
-      return;
-    }
-
-    const h = Math.floor(ms / 3600000);
-    const m = Math.floor((ms % 3600000) / 60000);
-    const s = Math.floor((ms % 60000) / 1000);
-    const msg = '[TIMER] ' + pad(h) + 'h ' + pad(m) + 'm ' + pad(s) + 's' + (clockSynced ? ' (synced)' : '');
-
-    if (ms < 60000) console.log(msg);
-    else if (ms < 300000) console.info(msg);
-
-    const interval = ms > 300000 ? 30000 : (ms > 60000 ? 10000 : (ms > 10000 ? 1000 : 100));
-    clearInterval(countdownTimer);
-    countdownTimer = setTimeout(countdown, interval);
-  }
-
-  function cleanup() {
-    clearInterval(keepaliveTimer);
-    clearInterval(countdownTimer);
-    clearInterval(fireInterval);
-    releaseWakeLock();
-  }
-
-  async function main() {
-    console.log('==============================');
-    console.log('[OK] KALLANG BOOKER v8.1 FIXED');
-    console.log('[OK] ' + CONFIG.slotDate + ' ' + CONFIG.startTime.slice(11, 16) + ' | User ' + CONFIG.userId + ' | Rule ' + CONFIG.ruleId + ' | ' + CONFIG.duration + 'min');
-    console.log('[OK] Syncing clock...');
-
-    await syncServerClock();
-
-    console.log('[OK] Measuring server latency...');
-    await measureLatency();
-
-    await prewarm();
-
-    console.log('[OK] Building pool (' + CONFIG.sessionsPerCourt + ' per court)...');
-
-    let poolBuilt = false;
-    for (let i = 1; i <= 3; i++) {
-      await refreshPool();
-      if (sessionPool.length) {
-        poolBuilt = true;
-        break;
       }
-      console.warn('[WARN] Attempt ' + i + ' failed, retry in 2s...');
-      await delay(2000);
     }
+    return null;
+  }
 
-    if (!poolBuilt) {
-      console.error('[ERR] Setup failed - could not build session pool');
-      cleanup();
-      return;
+  // ================= zones & sessions =================
+  async function fetchStart() {
+    var url = CFG.base + '/' + wizardPath + '/Start?clubId=' + CFG.clubId +
+      '&zoneTypeId=' + CFG.zoneTypeId + '&date=' + CFG.slotDate + '&startDate=' + currentStartTime();
+    var res = await fetch(url, { credentials: 'include', headers: authHeaders(), mode: 'cors' });
+    if (!res.ok) {
+      if (await ensureAuth(res)) return fetchStart();
+      throw new Error('start HTTP ' + res.status);
     }
+    var sessionId = res.headers.get('cp-buy-product-before-booking-fb-session-id');
+    var data = null;
+    try { data = await res.json(); } catch (e) { /* some variants return no body */ }
+    return { res: res, sessionId: sessionId, data: data };
+  }
 
+  async function fetchZones() {
+    var r = await fetchStart();
+    var z = (r.data && r.data.Data && r.data.Data.Zones) ? r.data.Data.Zones : [];
+    z.sort(function (a, b) {
+      var na = parseInt((a.Name.match(/\\d+$/) || ['0'])[0]) || 0;
+      var nb = parseInt((b.Name.match(/\\d+$/) || ['0'])[0]) || 0;
+      return nb - na;
+    });
+    return z;
+  }
+
+  async function buildSession(zone) {
+    var t = currentStartTime();
+    try {
+      var r = await fetchStart();
+      if (!r.sessionId) return null;
+      var res = await fetch(CFG.base + '/FacilityBookings/WizardSteps/SetFacilityBookingDetailsWizardStep/Next', {
+        method: 'POST',
+        credentials: 'include',
+        headers: wizardHeaders(r.sessionId),
+        body: JSON.stringify({
+          UserId: CFG.userId,
+          ZoneId: zone.Id,
+          StartTime: t,
+          RequiredNumberOfSlots: null,
+          Duration: CFG.duration
+        })
+      });
+      if (!res.ok) { await ensureAuth(res); return null; }
+      var d = null;
+      try { d = await res.json(); } catch (e) { /* ignore */ }
+      if (!ruleId && d && d.Data && d.Data.RuleId) {
+        ruleId = d.Data.RuleId;
+        log('auto ruleId =', ruleId);
+      }
+      return { sessionId: r.sessionId, zoneId: zone.Id, zone: zone };
+    } catch (e) {
+      log('build failed for', zone.Name, '-', e.message);
+      return null;
+    }
+  }
+
+  async function rebuildPool() {
+    var t = currentStartTime();
+    var z;
+    try { z = await fetchZones(); } catch (e) { err('zone fetch failed:', e.message); return; }
+    if (!z.length) { log('no zones for', t, '— slot not open yet (or wrong params)'); return; }
+    zones = z;
+    var built = [];
+    for (var i = 0; i < zones.length; i++) {
+      if (stopFlag) return;
+      var s = await buildSession(zones[i]);
+      if (s) built.push(s);
+      await delay(60);
+    }
+    pool = built;
+    log('pool built:', pool.length + '/' + zones.length, 'sessions @', t,
+      '| courts:', zones.map(function (z) { return z.Name; }).join(', '));
+  }
+
+  // ================= firing =================
+  function rateLimitHit() {
+    waveInterval = Math.min(waveInterval * 1.6, 5000);
+    healthyWaves = 0;
+  }
+
+  async function fireStep3(s) {
+    if (booked || stopFlag) return false;
+    if (!ruleId) return false;
+    try {
+      var res = await fetch(CFG.base + '/FacilityBookings/WizardSteps/ChooseBookingRuleStep/Next', {
+        method: 'POST',
+        credentials: 'include',
+        headers: wizardHeaders(s.sessionId),
+        body: JSON.stringify({
+          ruleId: ruleId,
+          OtherCalendarEventBookedAtRequestedTime: false,
+          HasUserRequiredProducts: false
+        })
+      });
+      stats.sent++;
+      if (res.status === 429) { stats.rl++; rateLimitHit(); return false; }
+      if (!res.ok) { await ensureAuth(res); stats.fail++; return false; }
+      var d = null;
+      try { d = await res.json(); } catch (e) { /* ignore */ }
+      if (d && (d.Redirect || (d.Data && (d.Data.Booked || d.Data.FacilityBooking)))) {
+        booked = true;
+        stats.ok++;
+        log('*** BOOKED *** court:', s.zone ? s.zone.Name : s.zoneId,
+          '| time:', currentStartTime().substring(11, 16));
+        onBooked(d);
+        return true;
+      }
+      stats.fail++;
+      return false;
+    } catch (e) {
+      stats.fail++;
+      return false;
+    }
+  }
+
+  // ================= dedupe (cancel duplicate same-slot bookings) =================
+  async function dedupeBookings() {
+    if (!CFG.userId) return;
+    try {
+      var res = await fetch(ROOT + '/Api/FacilityBooking/MyBookings?clubId=' + CFG.clubId +
+        '&userId=' + CFG.userId, { credentials: 'include', headers: authHeaders() });
+      if (!res.ok) return;
+      var b = await res.json();
+      var list = Array.isArray(b) ? b : (b && b.Data ? b.Data : []);
+      var t = currentStartTime();
+      var extras = [];
+      for (var i = 0; i < list.length; i++) {
+        var x = list[i];
+        var sd = x.StartDate || x.startDate || (x.FacilityBooking && x.FacilityBooking.StartDate) || '';
+        if (sd.indexOf(CFG.slotDate + 'T') === 0 && sd.substring(11, 16) === t.substring(11, 16)) extras.push(x);
+      }
+      if (extras.length > 1) {
+        log('dedupe: ' + extras.length + ' bookings for the same slot — cancelling extras');
+        for (var j = 1; j < extras.length; j++) {
+          var id = extras[j].Id || extras[j].id || extras[j].BookingId;
+          if (!id) continue;
+          try {
+            await fetch(ROOT + '/Api/FacilityBooking/Cancel', {
+              method: 'POST',
+              credentials: 'include',
+              headers: authHeaders({ 'Content-Type': 'application/json;charset=utf-8' }),
+              body: JSON.stringify({ bookingId: id, clubId: CFG.clubId })
+            });
+            log('cancelled extra booking', id);
+          } catch (e) { log('cancel failed for', id, '-', e.message); }
+        }
+      }
+    } catch (e) { log('dedupe failed:', e.message); }
+  }
+
+  async function onBooked(d) {
+    if (bookedHandled) return;
+    bookedHandled = true;
+    stopAll();
+    log('booking confirmed — complete payment in the portal to finalize.');
+    if (d && d.Redirect) {
+      log('payment:', d.Redirect);
+      setTimeout(function () { window.location.href = d.Redirect; }, 3000);
+    }
+    // in-flight parallel shots may have created duplicates — cancel them after they land
+    setTimeout(dedupeBookings, 2000);
+  }
+
+  async function wave() {
+    if (booked || stopFlag) return;
+    stats.waves++;
+    var reqs = [];
+    for (var i = 0; i < pool.length; i++) {
+      for (var j = 0; j < P.shots; j++) reqs.push((function (s) { return function () { return fireStep3(s); }; })(pool[i]));
+    }
+    for (var b = 0; b < reqs.length; b += P.conc) {
+      if (booked) return;
+      var batch = reqs.slice(b, b + P.conc);
+      await Promise.all(batch.map(function (f) { return f(); }));
+    }
+    if (stats.rl === 0) {
+      healthyWaves++;
+      if (healthyWaves >= 10) {
+        waveInterval = Math.max(waveInterval * 0.85, P.wave);
+        healthyWaves = 0;
+      }
+    }
+    if (stats.waves % 5 === 0) {
+      log('wave', stats.waves, '| sent', stats.sent, '| ok', stats.ok,
+        '| fail', stats.fail, '| rl', stats.rl, '| interval', Math.round(waveInterval) + 'ms');
+    }
+    // fall through to next priority time after repeated full-wave failures
+    if (!booked && curTimeIdx < CFG.priorityTimes.length - 1 &&
+        stats.waves % 8 === 0 && pool.length > 0) {
+      var lastWavesOk = stats.ok === 0;
+      if (lastWavesOk) {
+        log('no success on', CFG.priorityTimes[curTimeIdx], '— trying next priority time');
+        advanceTime();
+      }
+    }
+  }
+
+  async function advanceTime() {
+    curTimeIdx++;
+    log('priority time now:', CFG.priorityTimes[curTimeIdx]);
+    var newPool = [];
+    try {
+      var z = await fetchZones();
+      zones = z;
+      for (var i = 0; i < z.length; i++) {
+        if (stopFlag) return;
+        var s = await buildSession(z[i]);
+        if (s) newPool.push(s);
+        await delay(60);
+      }
+    } catch (e) { /* keep old pool */ }
+    if (newPool.length) pool = newPool;
+  }
+
+  function startBlitz() {
+    if (blitzTimer) return;
+    blitzTimer = true;
+    var deadline = Date.now() + CFG.retryWindowMs;
+    log('=== BLITZ ===', pool.length, 'sessions | retry window',
+      Math.round(CFG.retryWindowMs / 1000) + 's');
+    (async function loop() {
+      while (!booked && !stopFlag && Date.now() < deadline) {
+        if (pool.length === 0) await rebuildPool();
+        await wave();
+        if (booked || stopFlag) break;
+        await delay(jitter(waveInterval));
+      }
+      blitzTimer = null;
+      if (!booked && !stopFlag) {
+        log('blitz window ended — no booking yet');
+      }
+    })();
+  }
+
+  // ================= open detection =================
+  function modeHas(m) { return CFG.mode.indexOf(m) !== -1; }
+
+  async function autoDetectLoop() {
+    var est = estimatedOpenMs();
+    log('auto-detect: polling availability (est. open',
+      new Date(est).toLocaleString(), '— actual trigger is server truth)');
+    while (!booked && !stopFlag) {
+      var interval = 15000;
+      var toOpen = est - (Date.now() + clockOffset);
+      if (toOpen < 300000) interval = 1000;      // last 5 min: 1s resolution
+      else if (toOpen < 900000) interval = 3000; // last 15 min
+      else if (toOpen < 3600000) interval = 5000; // last hour
+      if (toOpen < -1800000) {
+        log('past estimated open with no slot yet — window may be longer; keeping 15s polls');
+      }
+      stats.polls++;
+      var found = false;
+      try {
+        var slot = await checkAvailability();
+        if (slot) {
+          log('*** SLOT BOOKABLE ***', slot.StartTime, '— firing!');
+          found = true;
+        }
+      } catch (e) {
+        // fallback: zones appearing also means the date became valid
+        try {
+          var z = await fetchZones();
+          if (z && z.length) { log('*** ZONES APPEARED *** — firing!'); found = true; }
+        } catch (e2) { /* keep polling */ }
+      }
+      if (found) {
+        await rebuildPool();
+        startBlitz();
+        return;
+      }
+      await delay(jitter(interval));
+    }
+  }
+
+  // ================= sniper (cancellation catch) =================
+  function sniperActive() {
+    var slotStart = new Date(CFG.slotDate + 'T' + CFG.priorityTimes[0] + ':00').getTime();
+    return Date.now() < slotStart - CFG.sniperHoursBefore * 3600000;
+  }
+
+  async function startSniper() {
+    if (blitzTimer) return;
+    log('=== SNIPER === watching for cancellations until',
+      CFG.sniperHoursBefore + 'h before slot (8s polls)');
+    var i = 0;
+    while (!booked && !stopFlag && sniperActive()) {
+      i++;
+      try {
+        var slot = await checkAvailability();
+        if (slot) {
+          log('*** SLOT REAPPEARED *** (poll ' + i + ') — firing!');
+          await rebuildPool();
+          startBlitz();
+          // wait for this blitz to end before looping (prevents stacked blitzes)
+          while (blitzTimer && !booked && !stopFlag) await delay(500);
+          if (booked || stopFlag) return;
+        }
+      } catch (e) { /* keep watching */ }
+      await delay(jitter(8000));
+    }
+    if (!booked && !stopFlag) log('sniper ended (deadline reached) — no booking');
+  }
+
+  // ================= keepalive & wake lock =================
+  function stopAll() {
+    if (keepaliveTimer) { clearInterval(keepaliveTimer); keepaliveTimer = null; }
+    if (wakeLock) { wakeLock.release().catch(function () {}); wakeLock = null; }
+  }
+
+  async function acquireWake() {
     if ('wakeLock' in navigator) {
       try {
         wakeLock = await navigator.wakeLock.request('screen');
-        console.log('[OK] Wake lock acquired');
-        wakeLock.addEventListener('release', () => {
-          if (!booked) {
-            (async () => {
-              if (!('wakeLock' in navigator)) return;
-              try {
-                wakeLock = await navigator.wakeLock.request('screen');
-              } catch (err) {
-                console.warn('Failed to reacquire wake lock:', err.message);
-              }
-            })();
-          }
+        wakeLock.addEventListener('release', function () {
+          if (!booked && !stopFlag) acquireWake();
         });
-      } catch (err) {
-        console.warn('[WARN] Wake lock failed:', err.message);
-      }
-    }
-
-    const openTime = CONFIG.openAtMs + serverClockOffset;
-    const timeLeft = openTime - now();
-
-    if (timeLeft <= CONFIG.prefireMs) {
-      console.log('[FIRING] Window open - NOW!');
-      await fireBlitz();
-    } else {
-      const hours = Math.floor(timeLeft / 3600000);
-      const mins = Math.floor((timeLeft % 3600000) / 60000);
-      console.log('[OK] Armed! Opens in ' + hours + 'h ' + mins + 'm');
-      console.log('[OK] Pool: ' + sessionPool.length + ' sessions | Refresh: ' + (CONFIG.keepaliveMs / 1000) + 's');
-
-      keepaliveTimer = setInterval(() => {
-        if (booked || (openTime - now() < 5000)) {
-          clearInterval(keepaliveTimer);
-          return;
-        }
-        if (!shouldRebuild()) {
-          (async () => {
-            try {
-              availableZones = null;
-              await refreshPool();
-            } catch (err) {
-              console.warn('Keepalive refresh failed:', err.message);
-            }
-          })();
-        }
-      }, CONFIG.keepaliveMs);
-
-      countdown();
+        log('wake lock acquired');
+      } catch (e) { log('wake lock unavailable'); }
     }
   }
 
-  window.addEventListener('error', (err) => {
-    console.error('[ERR] Unhandled error:', err.message);
-    cleanup();
-  });
+  function startKeepalive() {
+    keepaliveTimer = setInterval(function () {
+      if (booked || stopFlag || blitzTimer) return;
+      if (pool.length) {
+        (async function () {
+          try { await rebuildPool(); } catch (e) { /* ignore */ }
+        })();
+      }
+    }, P.keepalive);
+  }
 
-  main().catch(err => {
-    console.error('[ERR] Main error:', err);
-    cleanup();
-  });
+  // ================= main =================
+  async function main() {
+    log('==============================');
+    log('PG-BOOKER v1.0');
+    log(CFG.slotDate, '|', CFG.priorityTimes.join(' / '), '|', CFG.duration + 'min',
+      '| mode:', CFG.mode, '| preset:', CFG.preset);
+    if (CFG.email && CFG.password) {
+      try { await login(); }
+      catch (e) {
+        err('login failed:', e.message);
+        if (!CFG.jwt) { err('no JWT fallback — aborting. Check credentials / log out of the portal first.'); return; }
+        log('falling back to pasted JWT');
+      }
+    } else if (!CFG.jwt) {
+      err('no credentials and no JWT — aborting');
+      return;
+    }
+    await syncClock();
+    await measureLatency();
+    if (!CFG.userId && !CFG.jwt) { err('no usable auth — aborting'); return; }
+    await resolveWizard();
+    await acquireWake();
+    startKeepalive();
+
+    if (modeHas('open')) {
+      if (!CFG.autoDetect) {
+        var est = estimatedOpenMs();
+        var preWait = est - Date.now() - 120000;
+        if (preWait > 0) {
+          log('manual window: waiting', Math.round(preWait / 60000) + 'm until fast-poll phase');
+          await delay(preWait);
+        }
+      }
+      await autoDetectLoop();
+    }
+    if (!booked && !stopFlag && modeHas('sniper')) {
+      // wait for any in-flight blitz to finish before starting the sniper
+      while (blitzTimer && !booked && !stopFlag) await delay(500);
+      if (!booked && !stopFlag) await startSniper();
+    }
+    if (!booked && !stopFlag) log('done — no booking secured');
+  }
+
+  window.addEventListener('error', function (e) { err('unhandled:', e.message); });
+
+  main().catch(function (e) { err('main error:', e.message); });
 
   return {
-    cleanup: cleanup
+    stop: function () { stopFlag = true; stopAll(); log('stopped by user'); },
+    stats: function () { return Object.assign({ booked: booked, waveIntervalMs: Math.round(waveInterval) }, stats); },
+    status: function () { return { booked: booked, stopped: stopFlag, pool: pool.length, ruleId: ruleId }; }
   };
-})();`
-    }
+})();`;
+  }
+  //__GEN_END__
 
-    function copyScript() {
-      if (!generatedScript) return;
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(generatedScript).then(() => {
-          el('copy-btn').textContent = 'Copied!';
-          setTimeout(() => { el('copy-btn').textContent = 'Copy Script'; }, 2000);
-        }).catch(() => fallbackCopy());
-      } else {
-        fallbackCopy();
-      }
-    }
+  // ============ UI logic ============
+  var FIELDS = ['base', 'clubId', 'zoneTypeId', 'wizard', 'email', 'password', 'jwt',
+                'date', 'duration', 'times', 'autoDetect', 'windowDays', 'mode',
+                'aggressiveness', 'retryWindow', 'sniperHours'];
 
+  function loadSaved() {
+    FIELDS.forEach(function (id) {
+      var v = localStorage.getItem('pgb_' + id);
+      if (v === null) return;
+      if (el(id).type === 'checkbox') el(id).checked = v === '1';
+      else el(id).value = v;
+    });
+    syncWindow();
+  }
+
+  function saveAll() {
+    FIELDS.forEach(function (id) {
+      var e = el(id);
+      localStorage.setItem('pgb_' + id, e.type === 'checkbox' ? (e.checked ? '1' : '0') : e.value);
+    });
+  }
+
+  function syncWindow() {
+    var on = el('autoDetect').checked;
+    el('windowDays').disabled = on;
+  }
+
+  function parseTimes() {
+    return el('times').value.split('\n')
+      .map(function (t) { return t.trim(); })
+      .filter(function (t) { return /^\d{2}:\d{2}$/.test(t); });
+  }
+
+  function generate() {
+    var base = el('base').value.trim().replace(/\/+$/, '');
+    var email = el('email').value.trim();
+    var password = el('password').value;
+    var jwt = el('jwt').value.replace(/\s+/g, '').trim();
+    var date = el('date').value;
+    var times = parseTimes();
+
+    if (!date) { alert('Pick a date'); return; }
+    if (!times.length) { alert('Add at least one valid start time (HH:MM)'); return; }
+    if (!email && !jwt) { alert('Enter email+password (recommended) or a JWT'); return; }
+
+    var cfg = {
+      base: base,
+      clubId: parseInt(el('clubId').value, 10) || 1,
+      zoneTypeId: parseInt(el('zoneTypeId').value, 10) || 31,
+      wizard: el('wizard').value,
+      email: email,
+      password: password,
+      jwt: jwt,
+      slotDate: date,
+      priorityTimes: times,
+      duration: parseInt(el('duration').value, 10) || 60,
+      autoDetect: el('autoDetect').checked,
+      windowDays: parseInt(el('windowDays').value, 10) || 7,
+      mode: el('mode').value,
+      aggressiveness: el('aggressiveness').value,
+      retryWindowMs: parseInt(el('retryWindow').value, 10) || 120000,
+      sniperHoursBefore: parseInt(el('sniperHours').value, 10) || 1,
+      ruleIdOverride: 0
+    };
+
+    saveAll();
+    generatedScript = generateScript(cfg);
+
+    el('script-preview').textContent = generatedScript.slice(0, 400) + '…';
+    el('open-btn').href = base + '/#/FacilityBooking?clubId=' + cfg.clubId + '&zoneTypeId=' + cfg.zoneTypeId;
+    el('setup-screen').classList.add('hidden');
+    el('run-screen').classList.add('show');
+    copyScript();
+  }
+
+  function copyScript() {
+    if (!generatedScript) return;
+    function done() {
+      el('copy-btn').textContent = 'Copied!';
+      setTimeout(function () { el('copy-btn').textContent = 'Copy Script'; }, 2000);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(generatedScript).then(done, fallbackCopy);
+    } else fallbackCopy();
     function fallbackCopy() {
-      const ta = document.createElement('textarea');
+      var ta = document.createElement('textarea');
       ta.value = generatedScript;
       ta.style.position = 'fixed';
       ta.style.opacity = '0';
       document.body.appendChild(ta);
-      ta.focus();
-      ta.select();
+      ta.focus(); ta.select();
       try { document.execCommand('copy'); } catch (e) {}
       document.body.removeChild(ta);
-      el('copy-btn').textContent = 'Copied!';
-      setTimeout(() => { el('copy-btn').textContent = 'Copy Script'; }, 2000);
+      done();
     }
+  }
 
-    function reset() {
-      generatedScript = '';
-      el('setup-screen').classList.remove('hidden');
-      el('run-screen').classList.remove('show');
-    }
+  el('generate-btn').addEventListener('click', generate);
+  el('copy-btn').addEventListener('click', copyScript);
+  el('back-btn').addEventListener('click', function () {
+    el('run-screen').classList.remove('show');
+    el('setup-screen').classList.remove('hidden');
+  });
+  el('autoDetect').addEventListener('change', syncWindow);
 
-    el('generate-btn').addEventListener('click', generate);
-    el('copy-btn').addEventListener('click', copyScript);
-    document.querySelector('#run-screen .btn-secondary').addEventListener('click', reset);
-    el('date').addEventListener('input', updateOpens);
-    el('time').addEventListener('input', updateOpens);
-
-    window.addEventListener('DOMContentLoaded', () => {
-      ['date', 'time', 'userId', 'ruleId', 'duration', 'token'].forEach(id => {
-        const v = localStorage.getItem('kb_' + id);
-        if (v) el(id).value = v;
-      });
-      setDateMin();
-      updateOpens();
-    });
+  (function init() {
+    var today = new Date();
+    el('date').min = today.toISOString().slice(0, 10);
+    loadSaved();
+  })();
 })();
+  </script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('sw.js').catch(function () {});
+      });
+    }
   </script>
 </body>
 </html>

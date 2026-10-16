@@ -1,7 +1,7 @@
 {
-  "name": "Kallang Booker",
-  "short_name": "Booker",
-  "description": "Auto-book Kallang badminton courts",
+  "name": "PG Booker",
+  "short_name": "PG Booker",
+  "description": "PerfectGym booking script generator",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
